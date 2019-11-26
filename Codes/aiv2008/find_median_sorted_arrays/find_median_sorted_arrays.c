@@ -7,19 +7,20 @@
 double findMedianSortedArrays(int *nums1, int nums1Size, int *nums2, int nums2Size)
 {
 	double result = 0.0;
-	if((!*nums1 && !nums1Size && !*nums2 && !nums2Size) || nums1Size < 0 || nums2Size < 0) return result;
+	if((!nums1 && !nums1Size && !nums2 && !nums2Size) || nums1Size < 0 || nums2Size < 0) return result;
 
 	int moreSize = nums1Size < nums2Size ? nums2Size : nums1Size;
 	int lessSize = moreSize == nums1Size ? nums2Size : nums1Size;
 	int totalSize = moreSize + lessSize;
-	/**
+	//avoid assessing the illegal memory
 	if(!lessSize)
 	{
-		int *nums = nums1Size < nums2Size ? nums2 : nums1;
-		
-		return 
+		printf("enter here\n");
+		int *nums = (!nums1 || !nums1Size) ? nums2 : nums1;
+		printf("nums=%d\n", *nums);
+		return moreSize % 2 == 0 ? (*(nums + totalSize / 2 - 1) + *(nums + totalSize / 2)) * 1.0 / 2 : *(nums + totalSize / 2);
 	}
-**/
+
 	int *pMore = nums1Size < nums2Size ? nums2 : nums1;
 	int *pLess = pMore == nums1 ? nums2 : nums1;
 	
@@ -104,8 +105,8 @@ int max(int i, int j)
 
 int main(void)
 {
-	int a[] = {};
-	int b[] = {1};
+	int a[] = {3};
+	int b[] = {1,2,4};
 	printf("%f\n", findMedianSortedArrays(a, sizeof(a)/sizeof(a[0]), b, sizeof(b)/sizeof(b[0])));
 	return 0;
 }
