@@ -1,62 +1,111 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<limits.h>
+#define POS_INFINITY INT_MAX
+#define NAG_INFINITY -128
 
 double findMedianSortedArrays(int *nums1, int nums1Size, int *nums2, int nums2Size)
 {
-	if((!nums1 && !nums2) || (nums1Size<=0 && nums2Size <= 0))return 0.0;
-	if(!nums1)
-		return nums2Size%2 == 0 ? (*(nums2 + nums2Size/2 ) + *(nums2 + nums2Size/2 - 1)) / 2 : *(nums2 + nums2Size / 2);
-	else if(!nums2)
-		return nums1Size%2 == 0 ? (*(nums1 + nums1Size/2) + *(nums1 + nums1Size/2 - 1)) / 2 : *(nums1 + nums1Size / 2);
-	int *minArrays = nums1Size <= nums2Size ? nums1 : nums2;
-	int *maxArrays = minArrays == nums1 ? nums2 : nums1;
-	int minSize = nums1Size <= nums2Size ? nums1Size : nums2Size;
-	int maxSize = minSize == nums1Size ? nums2Size : nums1Size;
-	int i = minSize / 2;
-	int j = (minSize + maxSize + 1) / 2 - i;
-	while(i < minSize && i > 0)
-	{
-		if( *(minArrays + i - 1) <= *(maxArrays + j ) &&  *(minArrays + i ) >= *(maxArrays + j - 1 ))
-			return (maxSize + minSize) % 2 == 0 ? ((*(minArrays + i - 1) >= *(maxArrays + j - 1) ? *(minArrays + i - 1) : *(maxArrays + j - 1)) + (*(minArrays + i) <= *(maxArrays + j) ? *(minArrays + i) : *(maxArrays + j ))) * 1.0 / 2 : *(minArrays + i - 1) >= *(maxArrays + j- 1) ? *(minArrays + i - 1 ) : *(maxArrays + j -1) ; 
-		
-		
-		if(*(minArrays + i - 1) > *(maxArrays + j ))
-			i = i / 2;
-		else
-			i = i + ((minSize - i) / 2 < 1 ? 1 : (minSize - i) / 2);
-		j = (minSize + maxSize + 1) / 2 - i;
-	}
+	double result = 0.0;
+	if((!*nums1 && !nums1Size && !*nums2 && !nums2Size) || nums1Size < 0 || nums2Size < 0) return result;
 
+	int moreSize = nums1Size < nums2Size ? nums2Size : nums1Size;
+	int lessSize = moreSize == nums1Size ? nums2Size : nums1Size;
+	int totalSize = moreSize + lessSize;
+	/**
+	if(!lessSize)
+	{
+		int *nums = nums1Size < nums2Size ? nums2 : nums1;
+		
+		return 
+	}
+**/
+	int *pMore = nums1Size < nums2Size ? nums2 : nums1;
+	int *pLess = pMore == nums1 ? nums2 : nums1;
 	
-
-	if(i == minSize )
+	int i = lessSize < 2 ? lessSize : lessSize / 2;
+	//int i = lessSize;
+	int j = (totalSize + 1) / 2 - i;
+	while(i > 0 && i <= lessSize)
 	{
-		if((maxSize + minSize) % 2 == 0)
-		{		
-			int index1 = (maxSize + minSize) / 2 - 1;
-			int index2 = (maxSize + minSize) / 2;
-			return ((*maxArrays+index2-i) + (index1<i ? *minArrays+index1 : *maxArrays+index1-i)) * 1.0 / 2;
-		}
-		else
-			return *maxArrays + (maxSize + minSize) / 2 - i;
-	}
-	else
-	{
-		if((maxSize + minSize) % 2 == 0)
+		int leftIIndex = i - 1;
+		int leftJIndex = j - 1;
+		int rightIIndex = i;
+		int rightJIndex = j;
+		int leftIMax = leftIIndex < 0 ? NAG_INFINITY : *(pLess+leftIIndex);
+		int leftJMax = leftJIndex < 0 ? NAG_INFINITY : *(pMore +leftJIndex);
+		int rightIMin = rightIIndex >= lessSize ? POS_INFINITY : *(pLess + rightIIndex);
+		int rightJMin = rightJIndex >= moreSize ? POS_INFINITY : *(pMore + rightJIndex) ;
+		if( leftIMax <= rightJMin && leftJMax <= rightIMin )
 		{
-			int index1 = (maxSize + minSize) / 2 - 1;
-			int index2 = (maxSize + minSize) / 2;
-			return ((*maxArrays+index1) + (index2 >= j ? *minArrays : (*maxArrays+index2))) * 1.0 / 2;
+			result = totalSize % 2 == 0 ? (max(leftIMax, leftJMax) + min(rightIMin, rightJMin)) * 1.0 / 2 : max(leftIMax, leftJMax);
+			break;
+		}
+		if( leftIMax > rightJMin )
+		{
+			i = i < 2 ? i - 1 : i / 2;
+		}
+		else if(leftJMax > rightIMin)
+		{
+			i = i < 2 ? i + 1 : i + (lessSize - i) / 2;
+		}
+		j = j = (totalSize + 1) / 2 - i;
+	}
+	
+	if(i == 0)
+	{
+		if(totalSize % 2 == 0)
+		{
+			int leftIndex = totalSize / 2 - 1;
+			int rightIndex = totalSize / 2 ;
+			int leftVal = *(pMore + leftIndex);
+			int rightVal = 0;
+			if( rightIndex >=  moreSize) rightVal = *pLess;
+			else rightVal = *(pMore + rightIndex);
+			result = (leftVal + rightVal) * 1.0 / 2;
 		}
 		else
-			return *maxArrays + (maxSize + minSize) / 2;
+		{
+			int index = totalSize / 2;
+			result = *(pMore + index );
+		}
 	}
+	else if( i == lessSize + 1)
+	{//i==lessSize+1
+		if(totalSize % 2 == 0)
+		{
+			int leftIndex = totalSize / 2 - 1;
+			int rightIndex = totalSize / 2 ;
+			int leftVal = 0;
+			int rightVal = *(pMore + rightIndex - lessSize);
+			if(leftIndex < 0) leftVal = *(pLess + lessSize - 1);
+			else leftVal = *(pMore + leftIndex);
+			result = (leftVal + rightVal) * 1.0 / 2;
+		}
+		else
+		{
+			int index = totalSize / 2;
+			result = *(pMore + index - lessSize - 1);
+		}
+	}
+
+	return result;
+}
+
+int min(int i, int j)
+{
+	return i <= j ? i : j;
+}
+
+int max(int i, int j)
+{
+	return i >= j ? i : j;
 }
 
 int main(void)
 {
-	int a[] = {1};
-	int b[] = {2,3};
+	int a[] = {};
+	int b[] = {1};
 	printf("%f\n", findMedianSortedArrays(a, sizeof(a)/sizeof(a[0]), b, sizeof(b)/sizeof(b[0])));
 	return 0;
 }
