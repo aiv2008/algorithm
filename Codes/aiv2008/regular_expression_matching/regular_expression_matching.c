@@ -12,91 +12,71 @@ bool isMatch(char *s, char *p)
 	return dp(s, p, pSMove, pPMove, 1);
 }
 
-//用动态规划解决
-bool dp(char *s, char *p, char *pSMove, char *pPMove, bool status)
+bool dp(char *s, char *p, char *ps, char *pp, bool status)
 {
-	printf("%c, %c\n", *pSMove, *pPMove);
-	if(*pSMove == '\0') 
+	printf("%c, %c\n", *ps, *pp);
+	if(*ps == '\0' && *pp == '\0') 
 	{
-		printf("111\n");
-		char *pPMoveMove = pPMove;
-		while(*pPMoveMove != '\0')
-		{
-			if(*pPMoveMove != '*') return false;
-			pPMoveMove++;
-		}
+		printf("1111\n");
 		return true;
+	}
+	else if(*pp == '\0') return false;
+	if(*ps == *pp || *pp == '.') 
+	{
+		printf("2222\n");
+		return dp(s, p, ps + 1, pp + 1, 1);
 	}
 	else
 	{
-		if((int)(*pSMove) < 97 || (int)(*pSMove)>122 || !(((int)(*pPMove) >= 97 && (int)(*pPMove) <= 122) 
-			|| (*pPMove) == '*' || (*pPMove) == '.'))
+		if(*pp == '*')
 		{
-			printf("222\n");
-			return false;
-		}
-		if(status)
-		{
-			if(*pPMove == '.' || *pPMove == *pSMove) 
+			//* matchs 0 char
+			bool r = dp(s, p, ps, pp + 1, 1);
+			printf("status=%d\n", status);
+			if(status)
 			{
-				printf("333\n");
-				return dp(s, p, ++pSMove, ++pPMove, 1);
-			}
-			else if(*pPMove == '*')
-			{
-				char *pp = pSMove;
-				bool b = false;
-				while(*pp != '\0' && *pp == *(pp-1) && b == false)
+				if(!r && *ps != '\0')
 				{
-					b = dp(s, p, ++pSMove, pPMove, 1);
-					pp++;
-				}			
-				//if(*pp != '\0')
-
-				/**		
-				if(*(pPMove - 1) == '.' || (*pSMove == *(pSMove-1) && *pSMove  == *(pPMove - 1))) 
-				{
-					printf("444\n");
-					//bool r = dp(s, p, ++pSMove, ++pPMove, 1);
-					return dp(s, p, ++pSMove, ++pPMove, 1);
+					printf("5555\n");
+					printf("5555: %c, %c\n", *ps, *pp);
+					if(pp == p) return false;
+					char c = *(pp - 1);
+					if( *ps == c || c == '.')
+					{
+						printf("3333\n");
+						r = dp(s, p, ps + 1, pp + 1, 1);
+						if(!r) 
+						{
+							printf("4444\n");
+							r = dp(s, p, ps + 1, pp, 1);
+						}
+						return r;
+					}
+					else return false;
 				}
-				else  
-				{
-					printf("555\n");
-					return dp(s, p, pSMove, ++pPMove, 1);
-				}
-				**/
 			}
-			else 
-			{
-				printf("666\n");
-				return dp(s, p, pSMove, ++pPMove, 0);
-			}
+			else return r;
 		}
 		else
-		{
-			if( *pPMove == '*' ) 
-			{
-				printf("777\n");
-				return dp(s, p, pSMove, ++pPMove, 1);
-			}
-			else 
-			{
-				printf("888\n");
-				return false;
-			}
+		{//current character not equals each other
+			printf("6666\n");
+			return dp(s, p, ps, pp + 1, 0);
 		}
 	}
 }
 
-
 int main(void)
 {
+/**
 	char s[30], p[30];
 	printf("enter s:\n");
 	gets(s);
 	printf("enter p:\n");
 	gets(p);
+**/
+
+	char *s = "ab";
+	char *p = ".*c";
 	printf("%d\n", isMatch(s, p));
 	return 0;
 }
