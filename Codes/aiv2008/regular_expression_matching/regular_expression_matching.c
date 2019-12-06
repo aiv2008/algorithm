@@ -9,58 +9,45 @@ bool isMatch(char *s, char *p)
 {
 	char *pSMove = s;
 	char *pPMove = p;
-	return dp(s, p, pSMove, pPMove, 1);
+	return dp(s, p, pSMove, pPMove);
 }
 
-bool dp(char *s, char *p, char *ps, char *pp, bool status)
+bool dp(char *s, char *p, char *ps, char *pp)
 {
-	printf("%c, %c\n", *ps, *pp);
-	if(*ps == '\0' && *pp == '\0') 
-	{
-		printf("1111\n");
+	printf("%c, %d ,%c, %d\n", *ps, ps - s, *pp, pp - p);
+	if(*ps == '\0' && *pp == '\0') {
 		return true;
 	}
 	else if(*pp == '\0') return false;
-	if(*ps == *pp || *pp == '.') 
-	{
-		printf("2222\n");
-		return dp(s, p, ps + 1, pp + 1, 1);
-	}
-	else
-	{
+	else if(*pp == '*') return false;
+	if(*(pp + 1) != '*') {
+		if( *pp == '.' || *pp == *ps ) return dp(s, p, ps, pp+1);
+		else return false;
+	} else {
 		if(*pp == '*')
 		{
-			//* matchs 0 char
-			bool r = dp(s, p, ps, pp + 1, 1);
-			printf("status=%d\n", status);
-			if(status)
+			//if(pp == p) return false;
+			//匹配0个字符, 包含了当两字符不相等时, 后面一个也是*的情况
+			bool r = dp(s, p, ps, pp + 1);
+			//printf("status=%d\n", status);
+			//printf("5555\n");
+			//printf("5555: %c, %c\n", *ps, *pp);
+			char c = *(pp - 1);
+			if( *ps == c || c == '.' )
 			{
-				if(!r && *ps != '\0')
-				{
-					printf("5555\n");
-					printf("5555: %c, %c\n", *ps, *pp);
-					if(pp == p) return false;
-					char c = *(pp - 1);
-					if( *ps == c || c == '.')
-					{
-						printf("3333\n");
-						r = dp(s, p, ps + 1, pp + 1, 1);
-						if(!r) 
-						{
-							printf("4444\n");
-							r = dp(s, p, ps + 1, pp, 1);
-						}
-						return r;
-					}
-					else return false;
-				}
+				//匹配1个字符
+				if(*ps == '\0') r = dp(s, p, ps, pp + 1);
+				else r = dp(s, p, ps + 1, pp + 1);
+				//匹配2个字符
+				if(!r && *ps != '\0') r = dp(s, p, ps + 1, pp);
 			}
-			else return r;
+			return r;
 		}
 		else
 		{//current character not equals each other
-			printf("6666\n");
-			return dp(s, p, ps, pp + 1, 0);
+			//printf("6666\n");
+			if(*ps == '\0') return false;
+			else return dp(s, p, ps, pp + 1);
 		}
 	}
 }
@@ -75,8 +62,9 @@ int main(void)
 	gets(p);
 **/
 
-	char *s = "ab";
-	char *p = ".*c";
+	char *s = "bbbba";
+	char *p = ".*a*a";
+
 	printf("%d\n", isMatch(s, p));
 	return 0;
 }
