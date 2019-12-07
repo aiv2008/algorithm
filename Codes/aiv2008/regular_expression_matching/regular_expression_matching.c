@@ -5,50 +5,58 @@
 #define true 1
 #define false 0
 
-bool isMatch(char *s, char *p)
-{
+bool isMatch(char *s, char *p) {
 	char *pSMove = s;
 	char *pPMove = p;
 	return dp(s, p, pSMove, pPMove);
 }
 
-bool dp(char *s, char *p, char *ps, char *pp)
-{
+bool dp(char *s, char *p, char *ps, char *pp) {
 	printf("%c, %d ,%c, %d\n", *ps, ps - s, *pp, pp - p);
-	if(*ps == '\0' && *pp == '\0') {
-		return true;
-	}
-	else if(*pp == '\0') return false;
-	else if(*pp == '*') return false;
-	if(*(pp + 1) != '*') {
-		if( *pp == '.' || *pp == *ps ) return dp(s, p, ps, pp+1);
-		else return false;
-	} else {
-		if(*pp == '*')
-		{
-			//if(pp == p) return false;
-			//匹配0个字符, 包含了当两字符不相等时, 后面一个也是*的情况
-			bool r = dp(s, p, ps, pp + 1);
-			//printf("status=%d\n", status);
-			//printf("5555\n");
-			//printf("5555: %c, %c\n", *ps, *pp);
-			char c = *(pp - 1);
-			if( *ps == c || c == '.' )
-			{
-				//匹配1个字符
-				if(*ps == '\0') r = dp(s, p, ps, pp + 1);
-				else r = dp(s, p, ps + 1, pp + 1);
-				//匹配2个字符
-				if(!r && *ps != '\0') r = dp(s, p, ps + 1, pp);
+	if(*ps == '\0' && *pp == '\0') return true;
+	//判断当前字符是否匹配, 包括以下几种情况
+	//1. 当前字符相等或者p为'.', 则划分以下两种情况: 
+	//(1) 后面一个字符不为'*', 即只匹配一个, 则s和p指针都向后移动一位
+	//(2) 后面一个字符为'*', 则又需要划分两种情况:
+	//A. s+1和s不相同, 则只可匹配0个或者匹配一个, 即只可匹配当前字符或者匹配0个
+	//B. s+1和s相同, 则可匹配0个, 1个或者多个
+	//2. 当前字符不相等, 但p后面为'*', 则匹配0个
+	//3. 当前字符不相等, 且p后面不为'*', 返回false
+
+	//匹配之后, 操作如下(针对'*'号):
+	//1. 匹配0个,s不变, p+2
+	//2. 匹配1个, s+1, p+2
+	//3. 匹配多个, s+1 , p不变
+	if(*ps == '\0' || *pp == '\0') return false;
+	if(*ps == *pp || *pp == '.') {//当前字符相等或者p为'.'
+		if( *(pp + 1) != '*' ) {//后面一个字符不为'*', 即只匹配一个, 则s和p指针都向后移动一位
+			return dp(s, p, ps + 1, pp + 1);
+		}else {//后面一个字符为'*'
+			if(*ps != *(ps + 1)) {//s+1和s不相同, 则只可匹配0个或者匹配一个
+				//匹配0个
+				bool r = dp(s, p, ps, pp + 2);
+				if(!r) {
+					//匹配1个
+					r = dp(s, p, ps + 1, pp + 2);
+				}
+				return r;
+			}else {//s+1和s相同, 则可匹配0个, 1个或者多个
+				//匹配0个
+				bool r = dp(s, p, ps, pp + 2);
+				if(!r) {
+					//匹配1个
+					r = dp(s, p, ps + 1, pp + 2);
+					if(!r) {
+						//匹配多个
+						r = dp(s, p, ps + 1, pp);
+					}
+				}
+				return r;
 			}
-			return r;
 		}
-		else
-		{//current character not equals each other
-			//printf("6666\n");
-			if(*ps == '\0') return false;
-			else return dp(s, p, ps, pp + 1);
-		}
+	} else {//当前字符不相等
+		if(*(p+1) == '*') return dp(s, p, ps, pp + 2);
+		else return false;
 	}
 }
 
