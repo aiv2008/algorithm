@@ -36,7 +36,7 @@ bool dp(char *s, char *p, char *ps, char *pp) {
 		if( *(pp + 1) != '*' ) {//后面一个字符不为'*', 即只匹配一个, 则s和p指针都向后移动一位
 			return dp(s, p, ps + 1, pp + 1);
 		}else {//后面一个字符为'*'
-			if(*ps != *(ps + 1) || *pp != '.') {//s+1和s不相同或者p不为'.'(当p为'.'时, 可匹配任何单个字符), 则只可匹配0个或者匹配一个
+			if(*ps != *(ps + 1) && *pp != '.') {//s+1和s不相同并且p不为'.'(当p为'.'时, 可匹配任何单个字符), 则只可匹配0个或者匹配一个
 				//匹配0个
 				bool r = dp(s, p, ps, pp + 2);
 				if(!r) {
@@ -48,11 +48,11 @@ bool dp(char *s, char *p, char *ps, char *pp) {
 				//匹配0个
 				printf("2222\n");
 				bool r = dp(s, p, ps, pp + 2);
-				if(!r) {
+				if(*ps != '\0' && !r) {
 					//匹配1个
 					printf("3333\n");
 					r = dp(s, p, ps + 1, pp + 2);
-					if(!r) {
+					if(*ps != '\0' && !r) {
 						//匹配多个
 						printf("4444\n");
 						r = dp(s, p, ps + 1, pp);
