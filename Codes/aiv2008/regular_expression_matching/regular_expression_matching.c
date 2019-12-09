@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
 
 #define bool int
 #define true 1
@@ -12,10 +13,10 @@ bool isMatch(char *s, char *p) {
 }
 
 bool dp(char *s, char *p, char *ps, char *pp) {
-	printf("%c, %d ,%c, %d\n", *ps, ps - s, *pp, pp - p);
-	printf("strlen(s)=%d, ps - s=%d, strlen(p)=%d, pp - p=%d\n", strlen(s), ps - s , strlen(p), pp - p);
+	//printf("%c, %d ,%c, %d\n", *ps, ps - s, *pp, pp - p);
+	//printf("strlen(s)=%d, ps - s=%d, strlen(p)=%d, pp - p=%d\n", strlen(s), ps - s , strlen(p), pp - p);
 	if(*ps == '\0' && *pp == '\0') {
-		printf("1111\n");
+		//printf("1111\n");
  		return true;
 	}
 	//判断当前字符是否匹配, 包括以下几种情况
@@ -34,27 +35,35 @@ bool dp(char *s, char *p, char *ps, char *pp) {
 	//if(*ps == '\0' || *pp == '\0') return false;
 	if(*ps == *pp || *pp == '.') {//当前字符相等或者p为'.'
 		if( *(pp + 1) != '*' ) {//后面一个字符不为'*', 即只匹配一个, 则s和p指针都向后移动一位
+			//printf("2222\n");
+			if(*ps == '\0') return false;
 			return dp(s, p, ps + 1, pp + 1);
 		}else {//后面一个字符为'*'
+			if(*ps == '\0') {//若s是'\0', 则只可匹配0个
+				return dp(s, p, ps, pp + 2);
+			}
 			if(*ps != *(ps + 1) && *pp != '.') {//s+1和s不相同并且p不为'.'(当p为'.'时, 可匹配任何单个字符), 则只可匹配0个或者匹配一个
 				//匹配0个
+				//printf("3333\n");
 				bool r = dp(s, p, ps, pp + 2);
 				if(!r) {
+					//printf("4444\n");
 					//匹配1个
 					r = dp(s, p, ps + 1, pp + 2);
 				}
 				return r;
 			}else {//s+1和s相同, 则可匹配0个, 1个或者多个
 				//匹配0个
-				printf("2222\n");
+				//printf("5555\n");
 				bool r = dp(s, p, ps, pp + 2);
 				if(*ps != '\0' && !r) {
 					//匹配1个
-					printf("3333\n");
+					//printf("6666\n");
 					r = dp(s, p, ps + 1, pp + 2);
 					if(*ps != '\0' && !r) {
 						//匹配多个
-						printf("4444\n");
+						//printf("7777\n");
+						//printf("ps=%c, ps+1=%c\n", *ps, *(ps+1));
 						r = dp(s, p, ps + 1, pp);
 					}
 				}
@@ -62,8 +71,14 @@ bool dp(char *s, char *p, char *ps, char *pp) {
 			}
 		}
 	} else {//当前字符不相等
-		if( *pp != '\0' && *(pp+1) == '*') return dp(s, p, ps, pp + 2);
-		else return false;
+		if( *pp != '\0' && *(pp+1) == '*') {
+			//printf("8888\n");
+			return dp(s, p, ps, pp + 2);
+		}
+		else {
+			//printf("9999\n");
+			return false;
+		}
 	}
 }
 
@@ -73,13 +88,21 @@ int main(void)
 	char s[30], p[30];
 	printf("enter s:\n");
 	gets(s);
+	
 	printf("enter p:\n");
 	gets(p);
+	
+	char *ss = (char*)calloc( strlen(s)+1, sizeof(char));
+	char *pp = (char*)calloc( strlen(p)+1, sizeof(char));
+	strcpy(ss, s);
+	strcpy(pp, p);
+	//char *s = "ab";
+	//char *p = ".*c*";
+	//printf("strlen(s)=%d, strlen(p)=%d\n", strlen(s), strlen(p));
+	printf("%d\n", isMatch(ss, pp));
 
+	//int *a = "usb";
+	//printf("%c\n", a[10]);
 
-	//char *s = "bbbba";
-	//char *p = ".*a*a";
-
-	printf("%d\n", isMatch(s, p));
 	return 0;
 }
