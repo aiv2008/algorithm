@@ -30,13 +30,40 @@ int sigma(char *a, int aLen, char *b, int bLen) {
 
 
 void test() {
+	int rowSize = 2;
+	int colSize = 5;
 	int a[2][5] = {{1,2,3,4,5},{6,7,8,9,10}};
+	printTwoDimension(a,rowSize, colSize) ;
 	printf("---end---");
 }
 
+void printTwoDimension(int (*p)[3], int rowLen, int colLen) {
+	int i;
+	for(i=0;i<rowLen;i++) {
+		int j;
+		for(j=0;j<colLen;j++) {
+			//printf("%d, ", *(*(p+i)+j));
+			printf("%d,", p[i][j]);
+		}
+		printf("\n");
+	}
+}
+
+void printTwoDimension2(int **p, int rowLen, int colLen) {
+	int i;
+	for(i=0;i<rowLen;i++) {
+		int j;
+		for(j=0;j<colLen;j++) {
+			printf("%d, ", *(*(p+i)+j));
+			//printf("%d,", p[i][j]);
+		}
+		printf("\n");
+	}
+}
+
 int main(void) {
-	test();
-	/**
+//	test();
+	
 	char a[30], b[30];
 	printf("please input a: \n");
 	gets(a);
@@ -62,18 +89,10 @@ int main(void) {
 	*pbb = '\0';
 	int **status = NULL;
 	initFA(aa, bb, &status);
-**/
+	int m = strlen(aa);
+	int n = strlen(bb);
+	printTwoDimension2(status, m+1, n);
 	return 0;
-}
-
-void twoDimension(int **p, int rowLen, int colLen) {
-	int i;
-	for(i=0;i<rowLen;i++) {
-		int j;
-		for(j=0;j<colLen;j++) {
-			//printf("%d, ", (*p+i));
-		}
-	}
 }
 
 //initial my finite automation
@@ -94,12 +113,13 @@ void initFA(char *p, char *c, int ***status) {
 	for(i=0;i<m+1;i++) {
 		int j;
 		for(j=0;j<n;j++) {
-			char *cCopy = (char*)calloc(i+1, sizeof(char));
-			memcpy(cCopy, p, i-1);
+			char *cCopy = (char*)calloc(i+2, sizeof(char));
+			if(i > 0) memcpy(cCopy, p, i);
 			*(cCopy+i) = *(c+j);
-			*(cCopy+i+1) = '\0';	
-			int maxLen = sigma(cCopy, strlen(cCopy), p, i);
-			printf("maxLen=%d\n", maxLen);
+			*(cCopy+i+1) = '\0';
+			printf("cCopy=%s, strlen(cCopy)=%d, p=%s, i+1=%d\n", cCopy, strlen(cCopy), p, i+1);	
+			int maxLen = sigma(cCopy, strlen(cCopy), p, i+1);
+		//	printf("maxLen=%d\n", maxLen);
 			*(*(*status+i)+j) = maxLen;
 		}
 	}
