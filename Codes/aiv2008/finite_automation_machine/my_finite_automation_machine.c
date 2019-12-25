@@ -28,15 +28,6 @@ int sigma(char *a, int aLen, char *b, int bLen) {
 	return result;
 }
 
-
-void test() {
-	int rowSize = 2;
-	int colSize = 5;
-	int a[2][5] = {{1,2,3,4,5},{6,7,8,9,10}};
-	printTwoDimension(a,rowSize, colSize) ;
-	printf("---end---");
-}
-
 void printTwoDimension(int (*p)[3], int rowLen, int colLen) {
 	int i;
 	for(i=0;i<rowLen;i++) {
@@ -62,8 +53,6 @@ void printTwoDimension2(int **p, int rowLen, int colLen) {
 }
 
 int main(void) {
-//	test();
-	
 	char a[30], b[30];
 	printf("please input a: \n");
 	gets(a);
@@ -87,11 +76,14 @@ int main(void) {
 		pbb++;
 	}
 	*pbb = '\0';
+/**
 	int **status = NULL;
 	initFA(aa, bb, &status);
 	int m = strlen(aa);
 	int n = strlen(bb);
 	printTwoDimension2(status, m+1, n);
+**/
+	printf("%d\n", sigma(aa, strlen(aa), bb, strlen(bb)));
 	return 0;
 }
 
