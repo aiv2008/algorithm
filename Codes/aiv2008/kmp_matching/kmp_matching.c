@@ -13,7 +13,7 @@ int computePrefixFunction(char *p) {
 		char *p11 = p1;
 		char *p2 = p;
 		while(*p11 != '\0' && *(p2+1) != '\0') {
-			printf("*p11=%c, *p2=%c\n", *p11, *p2);
+			//printf("*p11=%c, *p2=%c\n", *p11, *p2);
 			if(*p11 == *p2) {
 				p11++;
 				p2++;
@@ -22,12 +22,12 @@ int computePrefixFunction(char *p) {
 			}
 		}
 		if(*p11 == '\0') {
-			printf("enter here\n");
+			//printf("enter here\n");
 			result = p2 - p;
 			break;
 		}
 		p1++;
-		printf("\n");
+		//printf("\n");
 	}
 	return result;
 }
@@ -36,32 +36,38 @@ int computePrefixFunction(char *p) {
 //-1 means no matches
 int kmpMatching(char *t, char *p) {
 	if(!t || !p || !*t || !*p || !strlen(t) || !strlen(p) || strlen(p) > strlen(t)) return -1;
-	char *pt = t;
+	char *ptHeader = t;
+	char *ptTail = t;
 	char *pp = p;
 	int result = -1;
-	while(*pt != '\0' && *pp != '\0') {
-		if(*pt == *pp) {
-			pt++;
+	while(*ptTail != '\0' && *pp != '\0') {
+		printf("%c, %c, %c\n", *ptHeader, *ptTail, *pp);
+		if(*ptTail == *pp) {
+			//pt++;
+			ptTail++;
 			pp++;
 		} else {
 			int i = pp - p - 1;
 			if(i < 0) {
-				pt = pt + 1;
+				ptHeader = ptHeader + 1;
 			} else {
 				char* cCopy = (char*)calloc(i+2, sizeof(char));
-				memcpy(cCopy, pp, i+1);
+				memcpy(cCopy, p, i+1);
+				*(cCopy+i+1) = '\0';
 				printf("%d, %s\n", i, cCopy);
 				int s = computePrefixFunction(cCopy);
-				if(i+s > strlen(t)) break;
-				else {
-					pp = p;
-					pt = pt + s;
-				}
+				printf("s=%d\n", s);
+				ptHeader = ptTail - s;
+				//ptTail = ptHeader;
+				pp = p;
 			}
+			ptTail = ptHeader;
 		}
 	} 
 	if(*pp == '\0') {
-		result = pt - t;
+		printf("enter here\n");
+		printf("%c, %c\n", *ptHeader, *t);
+		result = ptHeader - t;
 	}
 	return result;
 }
@@ -84,7 +90,7 @@ int main(void) {
 	if(pEnd) {
 		*pEnd = '\0';
 	}
-	printf("tt=%s, pp=%s\n", tt, pp);
+//	printf("tt=%s, pp=%s\n", tt, pp);
 	printf("s=%d\n", kmpMatching(tt, pp));
 
 /**
