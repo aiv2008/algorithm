@@ -54,9 +54,9 @@ void printTwoDimension2(int **p, int rowLen, int colLen) {
 
 int main(void) {
 	char a[30], b[30];
-	printf("please input a: \n");
+	printf("please input T: \n");
 	gets(a);
-	printf("please input b: \n");
+	printf("please input P: \n");
 	gets(b);
 	char *aa = (char*)calloc(strlen(a)+1, sizeof(char));
 	char *bb = (char*)calloc(strlen(b)+1, sizeof(char));
@@ -76,14 +76,14 @@ int main(void) {
 		pbb++;
 	}
 	*pbb = '\0';
-/**
+
 	int **status = NULL;
 	initFA(aa, bb, &status);
 	int m = strlen(aa);
 	int n = strlen(bb);
 	printTwoDimension2(status, m+1, n);
-**/
-	printf("%d\n", sigma(aa, strlen(aa), bb, strlen(bb)));
+
+//	printf("%d\n", sigma(aa, strlen(aa), bb, strlen(bb)));
 	return 0;
 }
 
