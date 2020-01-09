@@ -4,6 +4,9 @@
 
 #define MAP_SIZE 7
 #define ARRAY_SIZE 10
+#define REG_TYPE_COMMON c
+#define REG_TYPE_KLEEN k
+#define REG_TYPE_DOT d
 
 //struct of the element of the hashmap
 typedef struct {
@@ -43,6 +46,7 @@ typedef struct {
 	int colSize;
 	struct Array **ele;
 } Matrix;
+
 
 //return the hashcode of the character
 int hash(char c) {
@@ -214,6 +218,26 @@ int getByIndex(Array *array,  int index) {
 	return *(array->val+index);	
 }
 
+void initMatrix(Matrix **matrix, int rowSize, int colSize) {
+	if(matrix == NULL) return;
+	if(*matrix != NULL) {
+		printf("matrix is not null, please use reInit function\n");
+		return ;
+	}
+	*matrix = (Matrix*)calloc(1, sizeof(Matrix));
+	(*matrix)->rowSize = rowSize;
+	(*matrix)->colSize = colSize;
+	//(*matrix)->ele = (Array**)calloc(rowSize, );
+}
+
+void reInitMatrix(Matrix **matrix, int rowSize, int colSize) {
+
+}
+
+void setMatrixByIndex(Matrix *matrix, Array *array, int rowIndex, int ColIndex) {
+
+}
+
 int getSize(Array *array) {
 	if(array == NULL) return 0;
 	return array->size;
@@ -251,8 +275,38 @@ void getKleeneStarMatrix( char c, char*** matrix, int *rowSize, int *colSize) {
 	}
 }
 
-void regExpToNFA() {
 
+void getCommmonMatrix( char c, char*** matrix, int *rowSize, int *colSize) {
+	if(matrix == NULL) return ;
+	*rowSize = 3;
+	*colSize = 3;
+	*matrix = (char**)calloc(*rowSize, sizeof(char*));
+	int i;
+	for(i=0;i<*rowSize;i++) {
+		*(*matrix+i) = (char*)calloc(*colSize, sizeof(char));
+		int j;
+		for(j=0;j<*colSize;j++) {
+			if(i==0&&j==1) {
+				*(*(*matrix+i)+j) = c;
+			} else if(i==1&&j==2) {
+				*(*(*matrix+i)+j) = 'E';
+			} else {
+				*(*(*matrix+i)+j) = '0';
+			}
+		}
+	}
+}
+
+void regExpToNFA(char c, char regType, Array ***array ) {
+	if(array == NULL) return;
+	
+}
+
+void test() {
+	int rowSize = 4;
+	int colSize = 5;
+	int **a = (int**)calloc(4, sizeof(int*));
+	printf("size=%d\n", sizeof(a)/sizeof(*a));
 }
 
 void testHashMap() {
@@ -318,6 +372,7 @@ void testArray() {
 
 int main(void) {
 	//testKleeneStarMatrix();
-	testArray();
+//	testArray();
+	test();
 	return 0;
 }
