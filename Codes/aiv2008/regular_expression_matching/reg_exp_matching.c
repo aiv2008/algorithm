@@ -36,7 +36,8 @@ typedef struct {
 } Queue;
 
 typedef struct {
-	int *val;
+//	int *val;
+	char *val;
 	int size;
 	int capacity;
 } Array;
@@ -58,7 +59,8 @@ void put(HashMap **map, char key, int val) {
 	if(map == NULL) { return ;}
 	if(*map == NULL) {
 		*map = (HashMap*)calloc(1, sizeof(HashMap));
-		(*map)->size = MAP_SIZE;
+		//(*map)->size = MAP_SIZE;
+		(*map)->size = 0;
 		//(*map)->entry = (Entry*)calloc(MAP_SIZE, sizeof(Entry));
 	}
 	//printf("aaaa\n");
@@ -69,6 +71,7 @@ void put(HashMap **map, char key, int val) {
 		entry->val = val;
 		entry->this = entry;
 		entry->next = NULL;
+		(*map)->size = (*map)->size + 1;
 	} else {
 		Entry *pEntry = entry;
 		//Entry *pEntry = entry.this;
@@ -93,10 +96,9 @@ void put(HashMap **map, char key, int val) {
 			newEntry->this = newEntry;
 			newEntry->next = NULL;
 			pEntry->next = newEntry;
+			(*map)->size = (*map)->size + 1;
 		}
-		//entry.next = newEntry;
 	}
-	//printf("wait...\n");
 }
 
 int get(HashMap *map, char key) {
@@ -167,38 +169,41 @@ void iterateQueue(Queue *queue) {
 	printf("\n");
 }
 
-void add(Array **array, int val) {
+void add(Array **array, char *val, int len) {
 	if(array == NULL) return ;
 	if(*array == NULL) {
 		*array = (Array*)calloc(1, sizeof(Array));
 		(*array)->capacity = ARRAY_SIZE;
-		int *a = (int*)calloc(ARRAY_SIZE, sizeof(int));
-		//*a = val;
+		//int *a = (int*)calloc(ARRAY_SIZE, sizeof(int));
+		char *a = (char*)calloc(ARRAY_SIZE, len);
 		(*array)->val = a;
 		a = NULL;		
 	} else if((*array)->size + 1 > (*array)->capacity) {
 		(*array)->capacity = (*array)->capacity + ((*array)->capacity) / 2;
-		int *a = (int*)calloc((*array)->capacity, sizeof(int));
+		//int *a = (int*)calloc((*array)->capacity, sizeof(int));
+		char *a = (char*)calloc((*array)->capacity, len);
 		printf("size=%d\n", (*array)->size);
-		memcpy(a, (*array)->val, sizeof(int)*(*array)->size);
-		printf("aaa\n");
+		memcpy(a, (*array)->val, len*(*array)->size);
 		int size = (*array)->size;
+		/**
 		int i;
 		for(i=0;i<size;i++) {
 			printf("%d,", *(a+i));
 		}
 		printf("\n");
-		//free((*array)->val);
+		**/
 		(*array)->val = NULL;
 		(*array)->val = a;
 		a = NULL;
 	}
 	int *value = (*array)->val;
 	int size = (*array)->size;
-	*(value+size) = val;
+	memcpy(value+len*size, val, len);
+//	*(value+len*size) = val;
 	(*array)->size = size + 1;
 }
 
+/**
 void setByIndex(Array *array,int val, int index) {
 	if(array == NULL) return ;
 	if(index >= array->size) {
@@ -208,30 +213,23 @@ void setByIndex(Array *array,int val, int index) {
 	int* a = array->val;
 	*(a+index) = val;
 }
+**/
 
-int getByIndex(Array *array,  int index) {
+char *getByIndex(Array *array, int index, int len) {
 	if(array == NULL) return -1;
 	if(index >= array->size) {
 		printf("index is out of bound!\n");
 		return -1;
 	}
-	return *(array->val+index);	
+	return array->val+len*index;	
 }
 
-void initMatrix(Matrix **matrix, int rowSize, int colSize) {
-	if(matrix == NULL) return;
-	if(*matrix != NULL) {
-		printf("matrix is not null, please use reInit function\n");
-		return ;
+void addRow(Matrix **matrix, Array **array) {
+	if(matrix == NULL || array == NULL) return;
+	if(*matrix == NULL) {
+		*matrix = (Matrix*)malloc(sizeof(Matrix));
+		
 	}
-	*matrix = (Matrix*)calloc(1, sizeof(Matrix));
-	(*matrix)->rowSize = rowSize;
-	(*matrix)->colSize = colSize;
-	//(*matrix)->ele = (Array**)calloc(rowSize, );
-}
-
-void reInitMatrix(Matrix **matrix, int rowSize, int colSize) {
-
 }
 
 void setMatrixByIndex(Matrix *matrix, Array *array, int rowIndex, int ColIndex) {
@@ -243,7 +241,7 @@ int getSize(Array *array) {
 	return array->size;
 }
 
-void iterateArray(Array *array) {
+void iterateArray(Array *array, int len) {
 	if(array == NULL) return;
 	int size = array->size;
 	int *val = array->val;
@@ -321,6 +319,7 @@ void testHashMap() {
 	for(i=0;i<size;i++) {
 		printf("%d,", get(map, b[i]));
 	}
+	printf("map size=%d", map->size);
 	printf("\n");	
 }
 
@@ -358,21 +357,47 @@ void testQueue() {
 
 void testArray() {
 	Array *array = NULL;
-	int a[] = {1,23,3,4,5,6,7,4,3,6,8};
-	int size = sizeof(a)/sizeof(a[0]);
+	//int a[] = {1,23,3,4,5,6,7,4,3,6,8};
+	int a[11][2] = {{1,2},{3,4},{5,6},{7,8},{9,10},{11,12},{13,14},{15,16},{17,18},{19,20},{21,22}};
+	//int size = sizeof(a)/sizeof(a[0]);
+	int size = 11;
 	int i;
 	for(i=0;i<size;i++) {
-		add(&array, a[i]);
+		int j;
+		Array *b = NULL;
+		for(j=0;j<2;j++) {
+			add(&b, &a[i][j], sizeof(int));
+		}
+		add(&array, b, sizeof(Array));
 	}
 	printf("capacity=%d, size=%d\n", array->capacity, array->size);
-	iterateArray(array);
-	setByIndex(array, 100, 20);
-	iterateArray(array);
+	for(i=0;i<size;i++) {
+		int j;
+		Array *b = getByIndex(array, i, sizeof(Array));
+		for(j=0;j<b->size;j++) {
+			printf("%d,", *(b->val));
+		}
+		printf("\n");
+	}
+//	iterateArray(array);
+//	setByIndex(array, 100, 20);
+//	iterateArray(array);
+}
+
+void testMatrix() {
+	Matrix matrix;
+	if(matrix.ele == NULL) {
+		printf("null\n");
+	} else {
+		printf("%d, %d\n", matrix.rowSize, matrix.colSize);
+	//	printf("not null\n");
+	}
 }
 
 int main(void) {
 	//testKleeneStarMatrix();
-//	testArray();
-	test();
+	testArray();
+//	testMatrix();
+//	testHashMap();
 	return 0;
 }
