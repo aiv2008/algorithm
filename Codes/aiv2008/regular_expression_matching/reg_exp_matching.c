@@ -307,8 +307,11 @@ int regExpToNFA(char regType, StatusMatrix **sm, int startStatus) {
 		getCommmonMatrix(c, &matrix, &rowSize, &colSize);
 	}
 	int i = 0, j=0;
+	int rowIndex = 0, colIndex = 0 ;
 	char c;
 	HashMap *rowTitle = (*sm)->rowTitle;
+	Array *colTitle = (*sm)->colTitle;
+
 	while(i<rowSize) {
 		c = *(*(matrix+i)+j);
 		if(c != '0') {
@@ -316,12 +319,28 @@ int regExpToNFA(char regType, StatusMatrix **sm, int startStatus) {
 				rowTitle = (HashMap*)calloc(1, sizeof(HashMap));
 				(*sm)->rowTitle = rowTitle;
 				put(&rowTitle, c, 0);
+				colIndex = 0;
 			} else {
 				int value = get((*sm)->rowTitle, c);
 				if(value >= 0) {
-					
+					colIndex = value;
+				} else {
+					colIndex = rowTitle->size+1;
+					put(&rowTitle, c, colIndex);
 				}
 			}
+			
+			if(colTitle == NULL) {
+				colTitle = (Array*)calloc(1, sizeof(Array));
+				(*sm)->colTitle = colTitle;
+				add(&colTitle, 0);
+				rowIndex = 0;
+			} else {
+				rowIndex = colTitle->size;
+				add(&colTitle, rowIndex);	
+			}
+
+			
 		}
 		i++;
 	}
