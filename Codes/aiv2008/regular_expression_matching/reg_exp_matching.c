@@ -4,9 +4,9 @@
 
 #define MAP_SIZE 7
 #define ARRAY_SIZE 10
-#define REG_TYPE_COMMON c
-#define REG_TYPE_KLEEN k
-#define REG_TYPE_DOT d
+#define REG_TYPE_COMMON 'c'
+#define REG_TYPE_KLEEN 'k'
+#define REG_TYPE_DOT 'd'
 
 //struct of the element of the hashmap
 typedef struct {
@@ -42,12 +42,20 @@ typedef struct {
 	int capacity;
 } Array;
 
+/**
 typedef struct {
 	int rowSize;
 	int colSize;
 	struct Array **ele;
 } Matrix;
+**/
 
+typedef struct {
+	struct HashMap *rowTitle;
+	//struct HashMap *colTitle;
+	struct Array *colTitle;
+	struct Array ***matrix;
+} StatusMatrix;
 
 //return the hashcode of the character
 int hash(char c) {
@@ -170,6 +178,7 @@ void iterateQueue(Queue *queue) {
 }
 
 void add(Array **array, char *val, int len) {
+	//printf("val=%d\n", *val);
 	if(array == NULL) return ;
 	if(*array == NULL) {
 		*array = (Array*)calloc(1, sizeof(Array));
@@ -196,7 +205,7 @@ void add(Array **array, char *val, int len) {
 		(*array)->val = a;
 		a = NULL;
 	}
-	int *value = (*array)->val;
+	char *value = (*array)->val;
 	int size = (*array)->size;
 	memcpy(value+len*size, val, len);
 //	*(value+len*size) = val;
@@ -224,18 +233,6 @@ char *getByIndex(Array *array, int index, int len) {
 	return array->val+len*index;	
 }
 
-void addRow(Matrix **matrix, Array **array) {
-	if(matrix == NULL || array == NULL) return;
-	if(*matrix == NULL) {
-		*matrix = (Matrix*)malloc(sizeof(Matrix));
-		
-	}
-}
-
-void setMatrixByIndex(Matrix *matrix, Array *array, int rowIndex, int ColIndex) {
-
-}
-
 int getSize(Array *array) {
 	if(array == NULL) return 0;
 	return array->size;
@@ -251,6 +248,7 @@ void iterateArray(Array *array, int len) {
 	}
 	printf("\n");
 }
+
 
 void getKleeneStarMatrix( char c, char*** matrix, int *rowSize, int *colSize) {
 	if(matrix == NULL) return ;
@@ -295,9 +293,38 @@ void getCommmonMatrix( char c, char*** matrix, int *rowSize, int *colSize) {
 	}
 }
 
-void regExpToNFA(char c, char regType, Array ***array ) {
-	if(array == NULL) return;
-	
+int regExpToNFA(char regType, StatusMatrix **sm, int startStatus) {
+	if(sm == NULL) return;
+	if(*sm == NULL) {
+		*sm = (StatusMatrix*)calloc(1, sizeof(StatusMatrix));
+	}
+	char **matrix = NULL;
+	int rowSize = 0;
+	int colSize = 0;
+	if(regType == REG_TYPE_KLEEN) {
+		getKleeneStarMatrix(c, &matrix, &rowSize, &colSize);
+	} else {
+		getCommmonMatrix(c, &matrix, &rowSize, &colSize);
+	}
+	int i = 0, j=0;
+	char c;
+	HashMap *rowTitle = (*sm)->rowTitle;
+	while(i<rowSize) {
+		c = *(*(matrix+i)+j);
+		if(c != '0') {
+			if(rowTitle == NULL) {
+				rowTitle = (HashMap*)calloc(1, sizeof(HashMap));
+				(*sm)->rowTitle = rowTitle;
+				put(&rowTitle, c, 0);
+			} else {
+				int value = get((*sm)->rowTitle, c);
+				if(value >= 0) {
+					
+				}
+			}
+		}
+		i++;
+	}
 }
 
 void test() {
@@ -374,8 +401,10 @@ void testArray() {
 	for(i=0;i<size;i++) {
 		int j;
 		Array *b = getByIndex(array, i, sizeof(Array));
+		printf("b size is %d\n", b->size);
 		for(j=0;j<b->size;j++) {
-			printf("%d,", *(b->val));
+			int *value = (int*)getByIndex(b, j, sizeof(int));
+			printf("%d,", *value);
 		}
 		printf("\n");
 	}
@@ -384,20 +413,25 @@ void testArray() {
 //	iterateArray(array);
 }
 
-void testMatrix() {
-	Matrix matrix;
-	if(matrix.ele == NULL) {
-		printf("null\n");
-	} else {
-		printf("%d, %d\n", matrix.rowSize, matrix.colSize);
-	//	printf("not null\n");
+void testArray2() {
+	int a[] = {1,2,3,4,5,6,7, 8,9,10,11};
+	int size = sizeof(a)/sizeof(a[0]);
+	int i;
+	Array *array = NULL;
+	for(i=0;i<size;i++) {
+		add(&array, &a[i], sizeof(int)); 	
 	}
+	for(i=0;i<array->size;i++) {
+		printf("%d,", *((int*)(array->val)+i));
+	}
+	printf("\n");
 }
 
 int main(void) {
 	//testKleeneStarMatrix();
-	testArray();
+//	testArray();
 //	testMatrix();
 //	testHashMap();
+testKleeneStarMatrix();
 	return 0;
 }
