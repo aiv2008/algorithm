@@ -12,14 +12,14 @@
 typedef struct {
 	char key;
 	int val;
-	struct Entry* this;
+	//struct Entry* this;
 	struct Entry* next;
 } Entry;
 
 //struct of the hashmap
 typedef struct {
-	Entry entry[MAP_SIZE];
-	//Entry *entry;
+	//Entry entry[MAP_SIZE];
+	Entry **entry;
 	int size;
 } HashMap;
 
@@ -51,10 +51,12 @@ typedef struct {
 **/
 
 typedef struct {
-	struct HashMap *rowTitle;
-	//struct HashMap *colTitle;
-	struct Array *colTitle;
-	struct Array ***matrix;
+	//struct HashMap *rowTitle;
+	struct Array *rowTitle;
+	struct HashMap *colTitle;
+	//struct Array *colTitle;
+	//struct Array ***matrix;
+	struct Array *matrix;
 } StatusMatrix;
 
 //return the hashcode of the character
@@ -63,26 +65,24 @@ int hash(char c) {
 }
 
 void put(HashMap **map, char key, int val) {
-	//printf("key=%c, val=%d\n", key, val);
 	if(map == NULL) { return ;}
 	if(*map == NULL) {
 		*map = (HashMap*)calloc(1, sizeof(HashMap));
-		//(*map)->size = MAP_SIZE;
 		(*map)->size = 0;
-		//(*map)->entry = (Entry*)calloc(MAP_SIZE, sizeof(Entry));
+		(*map)->entry = (Entry**)calloc(MAP_SIZE, sizeof(Entry*));
 	}
 	//printf("aaaa\n");
 	int hashCode = hash(key);
-	Entry *entry = &((*map)->entry)[hashCode];
-	if(entry->this == NULL) {
+	Entry *entry = *((*map)->entry + hashCode);
+	if(entry == NULL) {
+		*((*map)->entry + hashCode) = (Entry*)calloc(1, sizeof(Entry));
+		entry = *((*map)->entry + hashCode);
+		entry = (Entry*)calloc(1, sizeof(Entry));
 		entry->key = key;
 		entry->val = val;
-		entry->this = entry;
-		entry->next = NULL;
 		(*map)->size = (*map)->size + 1;
 	} else {
 		Entry *pEntry = entry;
-		//Entry *pEntry = entry.this;
 		while(pEntry->next != NULL) {
 			if(pEntry->key == key) {
 				printf("11key=%c, val=%d\n", key, val);
@@ -93,16 +93,11 @@ void put(HashMap **map, char key, int val) {
 		}
 		//最后一个节点
 		if(pEntry->key == key) {
-	//		printf("22key=%c, val=%d\n", key, val);
 			pEntry->val = val;
-	//		printf("val1===%d\n", pEntry->val);
 		} else {
-	//		printf("33key=%c, val=%d\n", key, val);
 			Entry *newEntry = (Entry*)calloc(1, sizeof(Entry));
 			newEntry->key = key;
 			newEntry->val = val;
-			newEntry->this = newEntry;
-			newEntry->next = NULL;
 			pEntry->next = newEntry;
 			(*map)->size = (*map)->size + 1;
 		}
@@ -113,10 +108,11 @@ int get(HashMap *map, char key) {
 	if(map == NULL) return -1;
 	int val = -1;
 	int hashCode = hash(key);
-//	printf("hashCode=%d\n", hashCode);
-	Entry entry = (map->entry)[hashCode];
-//	Entry *entry = map->entry + hashCode;
-	Entry *pEntry = &entry;
+//	Entry entry = (map->entry)[hashCode];
+	Entry *entry = *(map->entry + hashCode);
+	if(entry == NULL) return -1;
+	//Entry *pEntry = &entry;
+	Entry *pEntry = entry;
 	while(pEntry != NULL) {
 		if(pEntry->key == key) {
 			val = pEntry->val;
@@ -293,7 +289,62 @@ void getCommmonMatrix( char c, char*** matrix, int *rowSize, int *colSize) {
 	}
 }
 
-int regExpToNFA(char regType, StatusMatrix **sm, int startStatus) {
+//allow there is no row title, but not allow there is no collum title
+void addRow(StatusMatrix *sm) {
+	if(sm == NULL || sm->colTitle == NULL)	return;
+	if(sm->rowTitle == NULL) {
+		Array *rowTitle = NULL;
+		add(&rowTitle, 0, sizeof(int));
+		sm->rowTitle = rowTitle;
+	} else {
+		Array *rowTitle = sm->rowTitle;
+		add(&rowTitle, getSize(rowTitle), sizeof(int));
+	}
+	HashMap *colTitle = sm->colTitle;
+	Array *matrix = sm->matrix;
+	Array *row = NULL;
+	Array *col = NULL;
+	int j;
+	for(j=0;j<colTitle->size;j++) {
+		add(&row, col, sizeof(Array));
+	}
+	add(&matrix, row, sizeof(Array));
+	sm->matrix = matrix;
+}
+
+void addCol(StatusMatrix **sm, char c) {
+	if(sm == NULL) return;
+	if(*sm == NULL) {
+		*sm = (StatusMatrix*)calloc(1, sizeof(StatusMatrix));
+		put(&(*sm)->colTitle, c, 0);
+	} else {
+		HashMap *colTitle = (*sm)->colTitle;
+		put(&colTitle, c, colTitle->size);
+	}
+}
+
+Array *getMatrixByIndex(StatusMatrix *sm, int rowIndex, int colIndex) {
+	if(sm == NULL) {
+		printf("matrix can not be null\n");
+		return NULL;
+	}
+	if(sm->rowTitle == NULL || sm->colTitle == NULL) {
+		printf("row title or collum title can not be null\n");
+		return NULL;
+	}
+	HashMap *rowTitle = sm->rowTitle;
+	Array *colTitle = sm->colTitle;
+	if(rowIndex < 0 || colIndex < 0 || rowIndex >= rowTitle->size || colIndex >= colTitle->size) {
+		printf("index is overflow\n");
+		return NULL;
+	}
+	Array *matrix = sm->matrix;
+	Array *row = (Array*)getByIndex(matrix, rowIndex, sizeof(Array));
+	Array *cell = (Array*)getByIndex(row, colIndex, sizeof(Array));
+	return cell;
+}
+
+int regExpToNFA(char val, char regType, StatusMatrix **sm, int startStatus) {
 	if(sm == NULL) return;
 	if(*sm == NULL) {
 		*sm = (StatusMatrix*)calloc(1, sizeof(StatusMatrix));
@@ -302,9 +353,9 @@ int regExpToNFA(char regType, StatusMatrix **sm, int startStatus) {
 	int rowSize = 0;
 	int colSize = 0;
 	if(regType == REG_TYPE_KLEEN) {
-		getKleeneStarMatrix(c, &matrix, &rowSize, &colSize);
+		getKleeneStarMatrix(val, &matrix, &rowSize, &colSize);
 	} else {
-		getCommmonMatrix(c, &matrix, &rowSize, &colSize);
+		getCommmonMatrix(val, &matrix, &rowSize, &colSize);
 	}
 	int i = 0, j=0;
 	int rowIndex = 0, colIndex = 0 ;
@@ -329,7 +380,7 @@ int regExpToNFA(char regType, StatusMatrix **sm, int startStatus) {
 					put(&rowTitle, c, colIndex);
 				}
 			}
-			
+		/**	
 			if(colTitle == NULL) {
 				colTitle = (Array*)calloc(1, sizeof(Array));
 				(*sm)->colTitle = colTitle;
@@ -339,7 +390,7 @@ int regExpToNFA(char regType, StatusMatrix **sm, int startStatus) {
 				rowIndex = colTitle->size;
 				add(&colTitle, rowIndex);	
 			}
-
+**/
 			
 		}
 		i++;
@@ -355,7 +406,7 @@ void test() {
 
 void testHashMap() {
 	HashMap *map = NULL;;
-	char b[] = {'a','b','c','d','e','f','g','h', 'a', 'c'};
+	char b[] = {'a', 'a', 'c'};
 	int i;
 	int size = sizeof(b)/sizeof(b[0]);
 	for(i=0;i<size;i++) {
@@ -446,11 +497,46 @@ void testArray2() {
 	printf("\n");
 }
 
+void testStatusMatrix() {
+	char colArray[] = {'E', 'a'};
+	int *valArray[] = {{1,3}, {2}};
+	int valLen[] = {2,1};
+	StatusMatrix *sm = NULL;
+	addCol(&sm, colArray[0]);
+	addCol(&sm, colArray[1]);
+	addRow(sm);
+	int i;
+	int size = sizeof(colArray)/sizeof(colArray[0]);
+	for(i=0;i<size;i++) {
+		int colIndex = get(sm->colTitle, colArray[i]);
+		int rowIndex = getSize(sm->rowTitle) - 1;
+		Array *matrix = getMatrixByIndex(sm, rowIndex, colIndex);	
+		int *a = valArray[i];
+		int size = valLen[i];
+		int j;
+		for(j=0;j<size;j++) {
+			add(&matrix, *(a+j), sizeof(int));
+		}
+	}
+	HashMap *colTitle = sm->colTitle;
+	Array *rowTitle = sm->rowTitle;
+	int colSize = colTitle->size;
+	int rowSize = rowTitle->size;
+	for(i=0;i<rowSize;i++) {
+		printf("row title= %d\n", *(rowTitle+i));
+		int j;
+		for(j=0;j<colSize;j++) {
+			//printf("", *(colTitle));
+		}
+	}	
+}
+
 int main(void) {
 	//testKleeneStarMatrix();
 //	testArray();
 //	testMatrix();
-//	testHashMap();
-testKleeneStarMatrix();
+	testHashMap();
+//testKleeneStarMatrix();
+//testStatusMatrix();
 	return 0;
 }
