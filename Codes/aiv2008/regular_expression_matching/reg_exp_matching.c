@@ -12,8 +12,8 @@ typedef struct {
 	//int edgeSize;
 	int size;
 	int capacity;
-	int startStatus;
-	int endStatus;
+	int startState;
+	int endState;
 } Graph;
 
 void addState(Graph **g) {
@@ -27,7 +27,7 @@ void addState(Graph **g) {
 		for(i=0;i<capacity;i++)
 			*((*g)->node+i) = -1;
 		(*g)->edge = (char**)calloc(capacity, sizeof(char*));
-		(*g)->startStatus = 0;
+		(*g)->startState = 0;
 	}
 	if((*g)->size + 1 > (*g)->capacity) {
 		int capacity = (*g)->capacity + (*g)->capacity/2;
@@ -51,7 +51,7 @@ void addState(Graph **g) {
 	}
 	int size = (*g)->size;
 	*((*g)->node+size) = size;
-	(*g)->endStatus = size;
+	(*g)->endState = size;
 	(*g)->size++;
 }
 
@@ -65,7 +65,7 @@ void addEdge(Graph *g,char data, int startIndex, int endIndex) {
 	*(edge+endIndex) = data;
 }
 
-void addKleenStartNFA(Graph **g, char data) {
+void addKleenStarNFA(Graph **g, char data) {
 	if(g == NULL) return;
 	int state = *g == NULL ? 0 : (*g)->endState;
 	int size = 4;
@@ -99,15 +99,39 @@ void addStringNFA(Graph **g, char data) {
 }
 
 int main(void) {
-	char a[2][2] = {{'\0','\0'},{'\0','\0'}};
+	char *s = "a*b";
+	char *p = s;
+	Graph *g = NULL;
+	while(*p != '\0') {
+		if(*(p+1) == '*') {
+			addKleenStarNFA(&g, *p);
+			p+=2;
+		} else {
+			addStringNFA(&g, *p);
+			p++;
+		}
+	}
+
+	int *node = g->node;
+	char **edges = g->edge;
+	int size = g->size;
 	int i;
-	for(i=0;i<2;i++) {
-		int j;
-		for(j=0;j<2;j++) {
-			printf("%c,", a[i][j]);
+	for(i=0;i<size;i++) {
+		printf("%d,", *(node+i));
+	}
+	printf("\n");
+	char *edge = NULL;
+	for(i=0;i<size;i++) {
+		edge = *(edges+i);
+		if(edge == NULL) {
+			printf("0");
+		}else {
+			int j;
+			for(j=0;j<size;j++) {
+				printf("%c,", *(edge+j));
+			}
 		}
 		printf("\n");
 	}
-	printf("aaaaa");
 	return 0;
 }
