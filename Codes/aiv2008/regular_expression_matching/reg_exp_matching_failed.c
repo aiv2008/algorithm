@@ -406,7 +406,7 @@ void test() {
 
 void testHashMap() {
 	HashMap *map = NULL;;
-	char b[] = {'a', 'a', 'c'};
+	char b[] = {'a', 'b', 'c','e','d','g','f','h','b','a'};
 	int i;
 	int size = sizeof(b)/sizeof(b[0]);
 	for(i=0;i<size;i++) {
