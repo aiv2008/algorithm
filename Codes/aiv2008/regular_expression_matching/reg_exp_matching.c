@@ -124,7 +124,7 @@ int get(HashMap *map, char key) {
 	return val;
 }
 
-Entry **getEntries(HashMap *map) {
+Entry *getEntries(HashMap *map) {
 	if(map == NULL) return NULL;
 	Entry *result = (Entry*)calloc(map->size, sizeof(Entry));
 	int mapSize = MAP_SIZE;
@@ -134,7 +134,7 @@ Entry **getEntries(HashMap *map) {
 		if(*(map->entry+i) != NULL) {
 			Entry *entry = *(map->entry+i);
 			Entry *p = entry;
-			while(p->next != NULL) {
+			while(p != NULL) {
 				//memcpy(result+j, p, sizeof(Entry));
 				(result+j)->key = p->key;
 				(result+j)->val = p->val;
@@ -545,7 +545,7 @@ void testDelta() {
 }
 
 void testMap() {
-	char a[] = {'a','a'};
+	char a[] = {'a','b','c','a'};
 	HashMap *map = NULL;
 	int size = sizeof(a)/sizeof(a[0]);
 	int i;
@@ -570,9 +570,9 @@ void testMap() {
 
 int main(void) {
 
-	testMap();
+//	testMap();
 
-//	testDelta();
+	testDelta();
 
 /**
 	char *s = "a*b*a.";
