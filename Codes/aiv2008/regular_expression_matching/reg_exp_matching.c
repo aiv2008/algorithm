@@ -13,9 +13,15 @@ typedef struct {
 	struct Entry* next;
 } Entry;
 
+typedef struct {
+	char key;
+	int val;
+} Entity;
+
 //struct of the hashmap
 typedef struct {
-	Entry **entry;
+	struct Entry **entry;
+	struct Array *entity;
 	int size;
 } HashMap;
 
@@ -41,6 +47,7 @@ typedef struct {
 	int *node;
 	char **edge;
 //	int *key;
+	struct HashMap *weight;
 	int size;
 	int capacity;
 	int startState;
@@ -60,49 +67,18 @@ void swap_1(int* x, int* y)
 	*x = *x^*y;//(*x^*y)^((*x^*y)^*y)=*y£šÔ­Öµ£©
 }
 
+char *getByIndex(Array *array, int index, int len) {
+	if(array == NULL) return -1;
+	if(index >= array->size) {
+		printf("index is out of bound!\n");
+		return -1;
+	}
+	return array->val+len*index;	
+}
+
 //return the hashcode of the character
 int hash(char c) {
 	return ((int)c) % MAP_SIZE;
-}
-
-void put(HashMap **map, char key, int val) {
-	if(map == NULL) { return ;}
-	if(*map == NULL) {
-		*map = (HashMap*)calloc(1, sizeof(HashMap));
-		(*map)->size = 0;
-		(*map)->entry = (Entry**)calloc(MAP_SIZE, sizeof(Entry*));
-	}
-	//printf("aaaa\n");
-	int hashCode = hash(key);
-	Entry *entry = *((*map)->entry + hashCode);
-	if(entry == NULL) {
-		*((*map)->entry + hashCode) = (Entry*)calloc(1, sizeof(Entry));
-		entry = *((*map)->entry + hashCode);
-		//entry = (Entry*)calloc(1, sizeof(Entry));
-		entry->key = key;
-		entry->val = val;
-		(*map)->size = (*map)->size + 1;
-	} else {
-		Entry *pEntry = entry;
-		while(pEntry->next != NULL) {
-			if(pEntry->key == key) {
-				printf("11key=%c, val=%d\n", key, val);
-				pEntry->val = val;
-				break;
-			}
-			pEntry = pEntry->next;
-		}
-		//最后一个节点
-		if(pEntry->key == key) {
-			pEntry->val = val;
-		} else {
-			Entry *newEntry = (Entry*)calloc(1, sizeof(Entry));
-			newEntry->key = key;
-			newEntry->val = val;
-			pEntry->next = newEntry;
-			(*map)->size = (*map)->size + 1;
-		}
-	}
 }
 
 int get(HashMap *map, char key) {
@@ -124,8 +100,82 @@ int get(HashMap *map, char key) {
 	return val;
 }
 
-Entry *getEntries(HashMap *map) {
+void put(HashMap **map, char key, int val) {
+	if(map == NULL) { return ;}
+	if(*map == NULL) {
+		*map = (HashMap*)calloc(1, sizeof(HashMap));
+		(*map)->size = 0;
+		(*map)->entry = (Entry**)calloc(MAP_SIZE, sizeof(Entry*));
+	}
+	//printf("aaaa\n");
+	int hashCode = hash(key);
+	Entry *entry = *((*map)->entry + hashCode);
+	if(entry == NULL) {
+		*((*map)->entry + hashCode) = (Entry*)calloc(1, sizeof(Entry));
+		entry = *((*map)->entry + hashCode);
+		//entry = (Entry*)calloc(1, sizeof(Entry));
+		entry->key = key;
+		entry->val = val;
+		Entity *entity = (Entity*)malloc(sizeof(Entity));
+		entity->key = key;
+		entity->val = val;
+		add(&(*map)->entity, entity, sizeof(Entity));
+		(*map)->size = (*map)->size + 1;
+	} else {
+		Entry *pEntry = entry;
+		while(pEntry->next != NULL) {
+			if(pEntry->key == key) {
+				printf("11key=%c, val=%d\n", key, val);
+				pEntry->val = val;
+				int i;
+				Array *entites = (*map)->entity;
+				printf("entites size: %d\n", entites->size);
+				for(i=0;i<entites->size;i++) {
+					Entity *entity = (Entity*)getByIndex(entites, i, sizeof(Entity));
+					printf("entity->key=%c, key=%c\n", entity->key, key);
+					if(entity->key == key) {
+						printf("enter here!!!\n");
+						entity->val = val;
+						break;
+					}
+				}
+				break;
+			}
+			pEntry = pEntry->next;
+		}
+		//最后一个节点
+		if(pEntry->key == key) {
+			pEntry->val = val;
+			int i;
+			Array *entites = (*map)->entity;
+			printf("entites size: %d\n", entites->size);
+			for(i=0;i<entites->size;i++) {
+				Entity *entity = (Entity*)getByIndex(entites, i, sizeof(Entity));
+				printf("entity->key=%c, key=%c\n", entity->key, key);
+				if(entity->key == key) {
+					printf("enter here!!!\n");
+					entity->val = val;
+					break;
+				}
+			}
+		} else {
+			Entry *newEntry = (Entry*)calloc(1, sizeof(Entry));
+			newEntry->key = key;
+			newEntry->val = val;
+			pEntry->next = newEntry;
+			(*map)->size = (*map)->size + 1;
+			Entity *entity = (Entity*)malloc(sizeof(Entity));
+			entity->key = key;
+			entity->val = val;
+			add(&(*map)->entity, entity, sizeof(Entity));
+		}
+	}
+}
+
+Array *getEntites(HashMap *map) {
 	if(map == NULL) return NULL;
+	return map->entity;
+/**
 	Entry *result = (Entry*)calloc(map->size, sizeof(Entry));
 	int mapSize = MAP_SIZE;
 	int i;
@@ -144,6 +194,7 @@ Entry *getEntries(HashMap *map) {
 		}
 	}
 	return result;
+**/
 }
 
 void push(Queue **queue, char val) {
@@ -204,7 +255,8 @@ void add(Array **array, char *val, int len) {
 		char *a = (char*)calloc(ARRAY_SIZE, len);
 		(*array)->val = a;
 		a = NULL;		
-	} else if((*array)->size + 1 > (*array)->capacity) {
+	} 
+	if((*array)->size + 1 > (*array)->capacity) {
 		(*array)->capacity = (*array)->capacity + ((*array)->capacity) / 2;
 		char *a = (char*)calloc((*array)->capacity, len);
 		//printf("size=%d\n", (*array)->size);
@@ -220,13 +272,35 @@ void add(Array **array, char *val, int len) {
 	(*array)->size = size + 1;
 }
 
-char *getByIndex(Array *array, int index, int len) {
-	if(array == NULL) return -1;
-	if(index >= array->size) {
-		printf("index is out of bound!\n");
-		return -1;
+//add the element in the position of index
+void addByIndex(Array **array, char *val, int len, int index) {
+	if(array == NULL) return ;
+	if(*array == NULL) {
+		*array = (Array*)calloc(1, sizeof(Array));
+		(*array)->capacity = ARRAY_SIZE;
+		char *a = (char*)calloc(ARRAY_SIZE, len);
+		(*array)->val = a;
+		a = NULL;		
 	}
-	return array->val+len*index;	
+	if(index >= (*array)->size) return; 
+	if((*array)->size + 1 > (*array)->capacity) {
+		(*array)->capacity = (*array)->capacity + ((*array)->capacity) / 2;
+		char *a = (char*)calloc((*array)->capacity, len);
+		memcpy(a, (*array)->val, len*(*array)->size);
+		int size = (*array)->size;
+		(*array)->val = NULL;
+		(*array)->val = a;
+		a = NULL;
+	}
+	char *value = (*array)->val;
+	int size = (*array)->size;
+	int i;
+	for(i=size-1;i>=index;i--) {
+		memcpy(value+len*(i+1), value+len*i, len);
+	}
+	//memcpy(value+len*size, val, len);
+	memcpy(value+len*index, val, len);
+	(*array)->size = size + 1;
 }
 
 int getSize(Array *array) {
@@ -243,107 +317,6 @@ void iterateArray(Array *array, int len) {
 		printf("%d,", *(val+i));
 	}
 	printf("\n");
-}
-
-
-int myPartition(int* array, int start, int end)
-{
-	if(array == '\0')
-	{
-		printf("array cannot be null\n");
-		return -1;
-	}
-	if(start < 0)
-	{
-		printf("index must begin with 1\n");
-		return -1;
-	}
-	int i = start - 1;
-	int j = start;
-	if(j < end)
-	{
-		while(j < end)
-		{
-			if(*(array+j) <= *(array+end))
-			{
-				i++;
-				if(i != j)
-				{
-					swap_1(array+j, array+i);
-				}
-			}
-			j++;
-		}
-		if(i+1 != end)
-		{
-			swap_1(array+i+1, array+end);
-			return i+1;
-		}
-		else
-		{
-			return end;
-		}
-
-	}
-	return -1;
-}
-
-void myQuicksort(int* array, int start, int end)
-{
-	if(array == '\0')
-	{
-		printf("array cannot be null\n");
-		return ;
-	}
-	if(start < end)
-	{
-		int partitionIndex = myPartition(array, start, end);
-		if(partitionIndex < 0)
-		{
-		    printf("partitionIndex must larger than 0\n");
-		    return ;
-		}
-		myQuicksort(array, start, partitionIndex-1);
-		myQuicksort(array, partitionIndex+1, end);
-	}
-}
-
-int myRandomizedPartition(int* array, int start, int end)
-{
-	if(start < 0)
-	{
-		printf("quicksort myRandomizedPartition: index must begin with 1\n");
-		return -1;
-	}
-	if(start > end)
-	{
-		printf("quicksort myRandomizedPartition: start must smaller than end\n");
-		return -1;
-	}
-	srand(time(0));
-    	int randIndex = start + rand()%(end - start);
-	if(randIndex != end)swap_1(array+randIndex, array+end);
-	return myPartition(array, start, end);
-}
-
-void myRandomizedQuicksort(int* array, int start, int end)
-{
-	if(array == '\0')
-	{
-		printf("quicksort myRandomizedQuicksort: array cannot be null\n");
-		return ;
-	}
-	if(start < end)
-	{
-		int partitionIndex = myRandomizedPartition(array, start, end);
-		if(partitionIndex < 0)
-		{
-		    printf("quicksort myRandomizedQuicksort: partitionIndex must larger than 0\n");
-		    return ;
-		}
-		myRandomizedQuicksort(array, start, partitionIndex-1);
-		myRandomizedQuicksort(array, partitionIndex+1, end);
-	}
 }
 
 void addState(Graph **g) {
@@ -364,14 +337,11 @@ void addState(Graph **g) {
 		int capacity = (*g)->capacity;
 		(*g)->capacity = capacity + capacity/2;
 		int *node = (int*)calloc((*g)->capacity, sizeof(int));
-		printf("capacity=%d, (*g)->capacity=%d\n", capacity, (*g)->capacity);
 		int j;
 		for(j=0;j<capacity;j++) {
 			printf("node=%d,", *((*g)->node+j));
 		}
-		printf("\naaaaq\n");
 		memcpy(node, (*g)->node, sizeof(int)*capacity);
-		printf("bbbbb\n");
 		free((*g)->node);
 		(*g)->node = node;
 		node = NULL;
@@ -401,7 +371,12 @@ void addEdge(Graph *g,char data, int startIndex, int endIndex) {
 		*(g->edge+startIndex) = edge;
 	}
 	*(edge+endIndex) = data;
-	
+	HashMap *weight = g->weight;
+	//int weight = get(g->weight, data);
+	if(get(weight, data) == -1) {
+		put(&weight, data, weight->size);
+	}
+//	add(&g->weight, &data, sizeof(char));	
 }
 
 void addKleenStarNFA(Graph **g, char data) {
@@ -443,38 +418,30 @@ void addStringNFA(Graph **g, char data) {
 	addEdge(*g, 'E', state+2, state+2);
 }
 
-void delta(Graph *g, int state, char key, int **result, int *resultSize) {
-	if(g == NULL || result == NULL || resultSize == NULL) 
-	{
-		printf("g is null\n");
-		return NULL;
-	}
-	printf("state=%d\n", state);
-	char *edge = *(g->edge+state);
-	if(edge == NULL) return NULL;
-	//int *result = NULL;
+Array* delta(Graph *g, int state, char key) {
+	if(g == NULL ||  state >= g->size) return NULL;
 	Array *array = NULL;
+	char *edge = *(g->edge+state);
 	int size = g->size;
-	//printf("size=%d\n", size);
 	int i;
 	for(i=0;i<size;i++) {
-		if( *(edge+i) == key) {
-			add(&array, &i, sizeof(int));
+		if(edge+i==NULL) continue;
+		char c = *(edge+i);
+		if(c == key) {
+			if(array != NULL) {
+				int j;
+				for(j=0;j<array->size;j++) {
+					int *value = (int*)getByIndex(array, j, sizeof(int));
+					if(*value == i) break;
+					else if(*value < i) addByIndex(&array, &i, sizeof(int), j);
+				}
+				if(j == array->size) add(&array, &i, sizeof(int));
+			} else {
+				add(&array, &i, sizeof(int));
+			}
 		}
-	}	
-
-	//array sorted
-	if(array != NULL) {
-		//int *a = (int*)calloc(array->size, sizeof(int));
-		*result = (int *)calloc(array->size, sizeof(int));
-		memcpy(*result, array->val, array->size*sizeof(int));
-		free(array->val);
-		array->val = NULL;
-		free(array);
-		array = NULL;
-		myRandomizedQuicksort(*result, 0, size-1);
-		*resultSize = size;
 	}
+	return array;
 }
 
 void testDelta() {
@@ -518,29 +485,32 @@ void testDelta() {
 		printf("\n");
 	}
 
-	//int i;
+//	int *node = g->node;
+	HashMap *weight = g->weight;
+	int wSize = weight->size;
+	printf("wSize=%d\n", wSize);
+	Array *entities = getEntites(weight);
 	for(i=0;i<size;i++) {
-		p = s;
-		int *array = NULL;
-		int arraySize = 0;
-		while(*p != '\0') {
-			if(*p == '*' || *p == '.') {
-				p++;
-				continue;
-			}
-			delta(g, *(node+i), *p, &array, &arraySize);
-			//printf("arraySize=%d\n", arraySize);
-			printf("char=%c,", *p);
+		int j;
+		for(j=0;j<wSize;j++) {
+			//char *c = getByIndex(weight, j, sizeof(char));
+			//Entry *entry = getEntries(weight);
+			//Array *entity = getEntites(weight);
+			//char c = (entity+j)->key;
+			Entity *entity = (Entity*)getByIndex(entities, j, sizeof(Entity));
+			char c = entity->key;
+			printf("key=%c\n, value=%d\n", entity->key, entity->val);
+			Array *array = delta(g, *(node+i), c);
 			if(array != NULL) {
-				int j;
-				for(j=0;j<arraySize;j++) {
-					printf("states=%d, ", *(array+j));
+				printf("%c: {", c);
+				int k;
+				for(k=0;k<array->size;k++) {
+					int *value = (int*)getByIndex(array, k, sizeof(int));
+					printf("%d,", *value );
 				}
-				printf("\n");
+				printf("}\n");
 			}
-			p++;
-		}
-		
+		}	
 	}
 }
 
@@ -559,20 +529,48 @@ void testMap() {
 		printf("%d,", get(map, a[i]));
 	}
 	printf("\n");
-	printf("%d\n", map->size);
-	Entry *entry = getEntries(map);
-	for(i=0;i<map->size;i++) {
-		char key = (entry+i)->key;
-		int val = (entry+i)->val;
+	//printf("%d\n", map->size);
+	Array *entites = getEntites(map);
+	if(entites == NULL) printf("entity is null\n");
+	printf("map size: %d\n", entites->size);
+	for(i=0;i<entites->size;i++) {
+		Entity *entity = (Entity*)getByIndex(entites, i, sizeof(Entity));
+		char key = entity->key;
+		int val = entity->val;
 		printf("key=%c, val=%d\n", key, val);
 	}
 }
 
+void testArray() {
+	int a[] = {2,3,5,6,7,8,9,10};
+	Array *array = NULL;
+	int size = sizeof(a)/sizeof(a[0]);
+	int i;
+	for(i=0;i<size;i++) {
+		add(&array, &a[i], sizeof(int));
+	}
+	printf("array size is %d\n", array->size);
+	for(i=0;i<array->size;i++) {
+		int *value = (int*)getByIndex(array, i, sizeof(int));
+		printf("%d,", *value);
+	}
+	int insertedValue = 4;
+	addByIndex(&array, &insertedValue, sizeof(int), 10);
+	printf("\n");
+	for(i=0;i<array->size;i++) {
+		int *value = (int*)getByIndex(array, i, sizeof(int));
+		printf("%d,", *value);
+	}
+	printf("\n");
+}
+
 int main(void) {
 
-//	testMap();
+	testMap();
 
-	testDelta();
+//	testDelta();
+
+//	testArray();
 
 /**
 	char *s = "a*b*a.";
