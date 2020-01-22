@@ -21,7 +21,8 @@ typedef struct {
 //struct of the hashmap
 typedef struct {
 	struct Entry **entry;
-	struct Array *entity;
+//	struct Array *entity;
+	struct Array *keys;
 	int size;
 } HashMap;
 
@@ -107,19 +108,14 @@ void put(HashMap **map, char key, int val) {
 		(*map)->size = 0;
 		(*map)->entry = (Entry**)calloc(MAP_SIZE, sizeof(Entry*));
 	}
-	//printf("aaaa\n");
 	int hashCode = hash(key);
 	Entry *entry = *((*map)->entry + hashCode);
 	if(entry == NULL) {
 		*((*map)->entry + hashCode) = (Entry*)calloc(1, sizeof(Entry));
 		entry = *((*map)->entry + hashCode);
-		//entry = (Entry*)calloc(1, sizeof(Entry));
 		entry->key = key;
 		entry->val = val;
-		Entity *entity = (Entity*)malloc(sizeof(Entity));
-		entity->key = key;
-		entity->val = val;
-		add(&(*map)->entity, entity, sizeof(Entity));
+		add(&(*map)->keys, &key, sizeof(char));
 		(*map)->size = (*map)->size + 1;
 	} else {
 		Entry *pEntry = entry;
@@ -127,18 +123,6 @@ void put(HashMap **map, char key, int val) {
 			if(pEntry->key == key) {
 				printf("11key=%c, val=%d\n", key, val);
 				pEntry->val = val;
-				int i;
-				Array *entites = (*map)->entity;
-				printf("entites size: %d\n", entites->size);
-				for(i=0;i<entites->size;i++) {
-					Entity *entity = (Entity*)getByIndex(entites, i, sizeof(Entity));
-					printf("entity->key=%c, key=%c\n", entity->key, key);
-					if(entity->key == key) {
-						printf("enter here!!!\n");
-						entity->val = val;
-						break;
-					}
-				}
 				break;
 			}
 			pEntry = pEntry->next;
@@ -146,55 +130,20 @@ void put(HashMap **map, char key, int val) {
 		//最后一个节点
 		if(pEntry->key == key) {
 			pEntry->val = val;
-			int i;
-			Array *entites = (*map)->entity;
-			printf("entites size: %d\n", entites->size);
-			for(i=0;i<entites->size;i++) {
-				Entity *entity = (Entity*)getByIndex(entites, i, sizeof(Entity));
-				printf("entity->key=%c, key=%c\n", entity->key, key);
-				if(entity->key == key) {
-					printf("enter here!!!\n");
-					entity->val = val;
-					break;
-				}
-			}
 		} else {
 			Entry *newEntry = (Entry*)calloc(1, sizeof(Entry));
 			newEntry->key = key;
 			newEntry->val = val;
 			pEntry->next = newEntry;
+			add(&(*map)->keys, &key, sizeof(char));
 			(*map)->size = (*map)->size + 1;
-			Entity *entity = (Entity*)malloc(sizeof(Entity));
-			entity->key = key;
-			entity->val = val;
-			add(&(*map)->entity, entity, sizeof(Entity));
 		}
 	}
 }
 
-Array *getEntites(HashMap *map) {
+Array *getKeys(HashMap *map) {
 	if(map == NULL) return NULL;
-	return map->entity;
-/**
-	Entry *result = (Entry*)calloc(map->size, sizeof(Entry));
-	int mapSize = MAP_SIZE;
-	int i;
-	int j=0;
-	for(i=0;i<mapSize;i++) {
-		if(*(map->entry+i) != NULL) {
-			Entry *entry = *(map->entry+i);
-			Entry *p = entry;
-			while(p != NULL) {
-				//memcpy(result+j, p, sizeof(Entry));
-				(result+j)->key = p->key;
-				(result+j)->val = p->val;
-				p = p->next;
-				j++;
-			}
-		}
-	}
-	return result;
-**/
+	return map->keys;
 }
 
 void push(Queue **queue, char val) {
@@ -371,12 +320,14 @@ void addEdge(Graph *g,char data, int startIndex, int endIndex) {
 		*(g->edge+startIndex) = edge;
 	}
 	*(edge+endIndex) = data;
-	HashMap *weight = g->weight;
-	//int weight = get(g->weight, data);
-	if(get(weight, data) == -1) {
-		put(&weight, data, weight->size);
+	//HashMap *weight = g->weight;
+//	if(g->weight == NULL) printf("addEdge: weight is null\n");
+//	int t = get(g->weight, data);
+	//printf("t=%d\n", t);
+	if(get(g->weight, data) == -1) {
+	//	printf("%c addEdge enter here\n", data);
+		put(&g->weight, data, g->weight == NULL ? 0 : ((HashMap*)(g->weight))->size);
 	}
-//	add(&g->weight, &data, sizeof(char));	
 }
 
 void addKleenStarNFA(Graph **g, char data) {
@@ -428,16 +379,21 @@ Array* delta(Graph *g, int state, char key) {
 		if(edge+i==NULL) continue;
 		char c = *(edge+i);
 		if(c == key) {
+			int insertValue = i+1;
 			if(array != NULL) {
 				int j;
 				for(j=0;j<array->size;j++) {
 					int *value = (int*)getByIndex(array, j, sizeof(int));
 					if(*value == i) break;
-					else if(*value < i) addByIndex(&array, &i, sizeof(int), j);
+					else if(*value < i) 
+					{
+						addByIndex(&array, &insertValue, sizeof(int), j);
+						break;
+					}
 				}
-				if(j == array->size) add(&array, &i, sizeof(int));
+				if(j == array->size) add(&array, &insertValue, sizeof(int));
 			} else {
-				add(&array, &i, sizeof(int));
+				add(&array, &insertValue, sizeof(int));
 			}
 		}
 	}
@@ -445,7 +401,7 @@ Array* delta(Graph *g, int state, char key) {
 }
 
 void testDelta() {
-	char *s = "a*";
+	char *s = "a*b*";
 	char *p = s;
 	Graph *g = NULL;
 	while(*p != '\0') {
@@ -487,22 +443,24 @@ void testDelta() {
 
 //	int *node = g->node;
 	HashMap *weight = g->weight;
-	int wSize = weight->size;
-	printf("wSize=%d\n", wSize);
-	Array *entities = getEntites(weight);
+	if(weight == NULL) {
+		printf("weight is null\n");
+		return;
+	}
+	Array *keys = getKeys(weight);
+	printf("size=%d,", size);
+	printf("keys->size=%d\n", keys->size);
 	for(i=0;i<size;i++) {
 		int j;
-		for(j=0;j<wSize;j++) {
-			//char *c = getByIndex(weight, j, sizeof(char));
-			//Entry *entry = getEntries(weight);
-			//Array *entity = getEntites(weight);
-			//char c = (entity+j)->key;
-			Entity *entity = (Entity*)getByIndex(entities, j, sizeof(Entity));
-			char c = entity->key;
-			printf("key=%c\n, value=%d\n", entity->key, entity->val);
-			Array *array = delta(g, *(node+i), c);
+		for(j=0;j<keys->size;j++) {
+			char *c = getByIndex(keys, j, sizeof(char));
+			int value = get(weight, *c);
+			//printf("key=%c, value=%d,", *c, value);
+//			printf("node=%d\n", *(node+i));
+			Array *array = delta(g, *(node+i), *c);
+			//if(array == NULL) printf("test delta: array is null\n");
 			if(array != NULL) {
-				printf("%c: {", c);
+				printf("%c: {", *c);
 				int k;
 				for(k=0;k<array->size;k++) {
 					int *value = (int*)getByIndex(array, k, sizeof(int));
@@ -521,23 +479,14 @@ void testMap() {
 	int i;
 	for(i=0;i<size;i++) {
 		int val = get(map, a[i]);
-		printf("%d,", val == -1 ? 1 : (val+1) );
 		put(&map, a[i], val == -1 ? 1: (val+1));
 	}
 	printf("\n");
-	for(i=0;i<size;i++) {
-		printf("%d,", get(map, a[i]));
-	}
-	printf("\n");
-	//printf("%d\n", map->size);
-	Array *entites = getEntites(map);
-	if(entites == NULL) printf("entity is null\n");
-	printf("map size: %d\n", entites->size);
-	for(i=0;i<entites->size;i++) {
-		Entity *entity = (Entity*)getByIndex(entites, i, sizeof(Entity));
-		char key = entity->key;
-		int val = entity->val;
-		printf("key=%c, val=%d\n", key, val);
+	Array *keys = getKeys(map);
+	for(i=0;i<keys->size;i++) {
+		char *key = getByIndex(keys, i, sizeof(char));
+		int value = get(map, *key);
+		printf("key=%c, value=%d\n", *key, value);
 	}
 }
 
@@ -566,9 +515,9 @@ void testArray() {
 
 int main(void) {
 
-	testMap();
+//	testMap();
 
-//	testDelta();
+	testDelta();
 
 //	testArray();
 
