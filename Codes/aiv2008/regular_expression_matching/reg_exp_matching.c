@@ -56,9 +56,10 @@ typedef struct {
 } Graph;
 
 typedef struct {
-	struct HashMap *colTitile;
+	struct HashMap *colTitle;
 	struct Array *rowTitle;
-	int ***states;
+	struct Array ***states;
+//	int ***states;
 } NFAModel;
 
 void swap_1(int* x, int* y)
@@ -348,6 +349,8 @@ void addKleenStarNFA(Graph **g, char data) {
 	addEdge(*g, 'E', state+3, state+3);
 	addEdge(*g, 'E', state+3, state+1);
 	addEdge(*g, data, state+2, state+2);
+	Array *keys = getKeys((*g)->weight);
+	printf("weight size: %d", keys->size);
 }
 
 void addStringNFA(Graph **g, char data) {
@@ -384,8 +387,9 @@ Array* delta(Graph *g, int state, char key) {
 				int j;
 				for(j=0;j<array->size;j++) {
 					int *value = (int*)getByIndex(array, j, sizeof(int));
-					if(*value == i) break;
-					else if(*value < i) 
+					//printf("*value=%d, i=%d\n", *value, i);
+					if(*value == insertValue) break;
+					else if(*value > insertValue) 
 					{
 						addByIndex(&array, &insertValue, sizeof(int), j);
 						break;
@@ -398,6 +402,52 @@ Array* delta(Graph *g, int state, char key) {
 		}
 	}
 	return array;
+}
+
+NFAModel *convertToNFA(Graph *g) {
+	if(g == NULL) {
+		printf("graph is null;\n");
+		return NULL;
+	}
+	HashMap *weight = g->weight;
+	if(weight == NULL) {
+		printf("weight is null\n");
+		return NULL;
+	}
+	int *node = g->node;
+	int size = g->size;
+	NFAModel *model = (NFAModel*)calloc(1, sizeof(NFAModel));
+	model->colTitle = weight;
+	Array *keys = getKeys(weight);
+	//printf("size=%d,", size);
+	//printf("keys->size=%d\n", keys->size);
+	int i;
+	for(i=0;i<size;i++) {
+		add(&model->rowTitle, node+i, sizeof(int));	
+		int j;
+		for(j=0;j<keys->size;j++) {
+			char *c = getByIndex(keys, j, sizeof(char));
+			int value = get(weight, *c);
+			Array *array = delta(g, *(node+i), *c);
+			if(array != NULL) {
+				if(model->states == NULL) {
+					model->states = (Array***)calloc(size, sizeof(Array**));
+				}
+				if(*(model->states+*(node+i)) == NULL) {
+					*(model->states+*(node+i)) = (Array**)calloc(keys->size, sizeof(Array*));
+				}
+				*(*(model->states+*(node+i))+value) = array;
+				printf("%c: {", *c);
+				int k;
+				for(k=0;k<array->size;k++) {
+					int *value = (int*)getByIndex(array, k, sizeof(int));
+					printf("%d,", *value );
+				}
+				printf("}\n");
+			}
+		}	
+	}
+	return model;
 }
 
 void testDelta() {
@@ -441,7 +491,47 @@ void testDelta() {
 		printf("\n");
 	}
 
-//	int *node = g->node;
+	NFAModel *model = convertToNFA(g);
+	if(model == NULL) printf("NFAModel is null\n");
+	HashMap *colTitle = model->colTitle;
+	Array *rowTitle = model->rowTitle;
+	Array ***states = model->states;
+	Array *keys = getKeys(model);
+	//int i;
+	printf("---colTitle begin---\n");
+	for(i=0;i<keys->size;i++) {
+		char *key = getByIndex(keys, i, sizeof(char));
+		int value = get(keys, *key);
+		printf("key=%c,value=%d\n", *key, value);		
+	}
+	printf("---colTitle end---\n");
+
+	printf("---rowTitle begin---\n");
+	for(i=0;i<rowTitle->size;i++) {
+		int *state = (int*)getByIndex(rowTitle, i, sizeof(int));
+		printf("%d,", *state);
+	}
+	printf("---rowTitle end---\n");
+
+	printf("---value matrix begin---\n");
+	for(i=0;i<rowTitle->size;i++) {
+		Array **a = *(states+i);
+		int j;
+		for(j=0;j<keys->size;j++) {
+			Array *b = *(a+j);
+			if(b != NULL) {
+				int k;
+				printf("{");
+				for(k=0;k<b->size;k++) {
+					int *v = (int*)getByIndex(b, k, sizeof(int));
+					printf("%d,", *v);	
+				}
+				printf("}");
+			}
+		} 
+	}
+	printf("---value matrix end---\n");
+/**
 	HashMap *weight = g->weight;
 	if(weight == NULL) {
 		printf("weight is null\n");
@@ -455,10 +545,7 @@ void testDelta() {
 		for(j=0;j<keys->size;j++) {
 			char *c = getByIndex(keys, j, sizeof(char));
 			int value = get(weight, *c);
-			//printf("key=%c, value=%d,", *c, value);
-//			printf("node=%d\n", *(node+i));
 			Array *array = delta(g, *(node+i), *c);
-			//if(array == NULL) printf("test delta: array is null\n");
 			if(array != NULL) {
 				printf("%c: {", *c);
 				int k;
@@ -470,6 +557,7 @@ void testDelta() {
 			}
 		}	
 	}
+**/
 }
 
 void testMap() {

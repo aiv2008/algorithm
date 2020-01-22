@@ -47,7 +47,7 @@ typedef struct {
 typedef struct {
 	struct HashMap *colTitle;
 	struct Array *rowTitle;
-	int ***states;
+	struct Array ***states;
 } NFAModel;
 
 
@@ -97,6 +97,6 @@ void addStringNFA(Graph **g, char data);
 
 Array *delta(Graph *g, int state, char key);
 
-
+Array *getKeys(HashMap *map) ;
 
 
