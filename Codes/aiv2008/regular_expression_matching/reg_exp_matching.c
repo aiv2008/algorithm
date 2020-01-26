@@ -422,6 +422,12 @@ NFAModel *convertToNFA(Graph *g) {
 	//printf("size=%d,", size);
 	//printf("keys->size=%d\n", keys->size);
 	int i;
+	printf("test in convertToNFA: \n");
+	for(i=0;i<keys->size;i++) {
+		char *cTest = getByIndex(keys, i, sizeof(char));
+		printf("%c,", *cTest);
+	}
+	printf("\nend\n");
 	for(i=0;i<size;i++) {
 		add(&model->rowTitle, node+i, sizeof(int));	
 		int j;
@@ -496,12 +502,12 @@ void testDelta() {
 	HashMap *colTitle = model->colTitle;
 	Array *rowTitle = model->rowTitle;
 	Array ***states = model->states;
-	Array *keys = getKeys(model);
+	Array *keys = getKeys(colTitle);
 	//int i;
 	printf("---colTitle begin---\n");
 	for(i=0;i<keys->size;i++) {
 		char *key = getByIndex(keys, i, sizeof(char));
-		int value = get(keys, *key);
+		int value = get(colTitle, *key);
 		printf("key=%c,value=%d\n", *key, value);		
 	}
 	printf("---colTitle end---\n");
@@ -520,6 +526,7 @@ void testDelta() {
 		for(j=0;j<keys->size;j++) {
 			Array *b = *(a+j);
 			if(b != NULL) {
+				//printf("rowTitle=", i, j);
 				int k;
 				printf("{");
 				for(k=0;k<b->size;k++) {
