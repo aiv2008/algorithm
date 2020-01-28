@@ -14,12 +14,12 @@ typedef struct {
 
 typedef struct {
 	struct Entry **entry;
-	struct Array *entity;
+	struct Array *keys;
 	int size;
 } HashMap;
 
 typedef struct {
-	char val;
+	char *val;
 	struct Element *next;
 } Element;
 
@@ -61,9 +61,11 @@ int get(HashMap *map, char key);
 
 Entry *getEntries(HashMap *map);
 
-void push(Queue **queue, char val);
+void push(Queue **queue, char *val);
 
 void pop(Queue **queue);
+
+Element *top(Queue *queue);
 
 Element *bottom(Queue *queue);
 
@@ -99,4 +101,6 @@ Array *delta(Graph *g, int state, char key);
 
 Array *getKeys(HashMap *map) ;
 
+void mergeSort(Array **dest, Array src);
 
+void eclosure(Array ***states, int rowSize, int colSize, HashMap *colMap, Array **dest);
