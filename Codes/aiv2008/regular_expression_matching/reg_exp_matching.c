@@ -404,6 +404,58 @@ Array* delta(Graph *g, int state, char key) {
 	return array;
 }
 
+void mergeSort(Array **dest, Array *src) {
+	if(dest == NULL) return;
+	if((*dest==NULL || !getSize(*dest)) && (src==NULL || !getSize(src))) return;
+	else if(*dest == NULL || !getSize(*dest)) {
+		int *value = NULL;
+		int i;
+		for(i=0;i<getSize(src);i++) {
+			value = (int*)getByIndex(src, i, sizeof(int));
+			add(dest, value, sizeof(int));
+		}
+	} else if(src == NULL || !getSize(src)) return;
+	int i=0;
+	int j=0;
+	while(i<getSize(*dest) && j<getSize(src)) {
+		int *aVal = (int*)getByIndex(*dest, i, sizeof(int));
+		int *bVal = (int*)getByIndex(src, j, sizeof(int));
+		if(*aVal == *bVal) {
+			i++;
+			j++;
+		} else if(*aVal < *bVal) {
+			i++;
+		} else {
+			addByIndex(dest, bVal, sizeof(int), i);
+			j++;
+		}
+	}
+	for(;j<getSize(src);j++) {
+		int *bVal = (int*)getByIndex(src, j, sizeof(int));
+		add(dest, bVal, sizeof(int));
+	}
+}
+
+Array *eclosure(Array ***states, int rowSize, int colSize,HashMap *colMap, Array *ss) {
+	if(states == NULL || ss == NULL || colMap) {
+		printf("states or ss or column title cannot be null\n");
+		return NULL;
+	}
+	Array *result = ss;
+	int i;
+	for(i=0;i<getSize(ss);i++) {
+		int *s = (int*)getByIndex(ss, i, sizeof(int));
+		if(*s >= rowSize) continue;
+		Array **state = *(states+*s);
+		int colValue = get(colMap, 'E');
+		if(*(state+colValue) != NULL) {
+			//Array *array = *(state+colValue);
+			//Array *result = mergeSort(result, *(state+colValue));
+			
+		}	
+	}
+}
+
 NFAModel *convertToNFA(Graph *g) {
 	if(g == NULL) {
 		printf("graph is null;\n");
@@ -454,6 +506,34 @@ NFAModel *convertToNFA(Graph *g) {
 		}	
 	}
 	return model;
+}
+
+
+void  testMergeSort() {
+	int a[] = {1,3,7,9};
+	int b[] = {2,4,5,6,10};
+	Array *aArr = NULL;
+	Array *bArr = NULL;
+	int aSize = sizeof(a)/sizeof(a[0]);
+	int bSize = sizeof(b)/sizeof(b[0]);
+	int i;
+	for(i=0;i<aSize;i++) {
+		add(&aArr, &a[i], sizeof(int));
+	}
+	for(i=0;i<bSize;i++) {
+		add(&bArr, &b[i], sizeof(int));
+	}
+	mergeSort(&aArr, bArr);
+	for(i=0;i<getSize(aArr);i++) {
+		int *value = (int*)getByIndex(aArr,i, sizeof(int));
+		printf("%d,", *value);
+	}
+	printf("\n");
+	for(i=0;i<getSize(bArr);i++) {
+		int *value = (int*)getByIndex(bArr, i, sizeof(int));
+		printf("%d,", *value);
+	}
+	printf("\n");
 }
 
 void testDelta() {
@@ -526,7 +606,10 @@ void testDelta() {
 		for(j=0;j<keys->size;j++) {
 			Array *b = *(a+j);
 			if(b != NULL) {
-				//printf("rowTitle=", i, j);
+				int *rowValue = (int*)getByIndex(rowTitle, i, sizeof(int));
+				char *colKey = getByIndex(keys, j, sizeof(char));
+				//int colValue = get(colTitle, *colKey);
+				printf("rowValue=%d, colValue=%c,", *rowValue, *colKey);
 				int k;
 				printf("{");
 				for(k=0;k<b->size;k++) {
@@ -536,6 +619,7 @@ void testDelta() {
 				printf("}");
 			}
 		} 
+		printf("\n");
 	}
 	printf("---value matrix end---\n");
 /**
@@ -612,9 +696,11 @@ int main(void) {
 
 //	testMap();
 
-	testDelta();
+//	testDelta();
 
 //	testArray();
+
+	testMergeSort();
 
 /**
 	char *s = "a*b*a.";
