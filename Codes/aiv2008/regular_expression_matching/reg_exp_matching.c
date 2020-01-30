@@ -306,6 +306,7 @@ void addState(Graph **g) {
 	int size = (*g)->size;
 	*((*g)->node+size) = size;
 	(*g)->endState = size;
+	printf("g end state: %d\n", (*g)->endState);
 	(*g)->size++;
 }
 
@@ -340,8 +341,9 @@ void addKleenStarNFA(Graph **g, char data) {
 	addEdge(*g, 'E', state+3, state+3);
 	addEdge(*g, 'E', state+3, state+1);
 	addEdge(*g, data, state+2, state+2);
-	Array *keys = getKeys((*g)->weight);
-	printf("weight size: %d", keys->size);
+	(*g)->endState++;
+//	Array *keys = getKeys((*g)->weight);
+//	printf("weight size: %d", keys->size);
 }
 
 void addStringNFA(Graph **g, char data) {
@@ -361,6 +363,7 @@ void addStringNFA(Graph **g, char data) {
 	}
 	addEdge(*g, data, state+1, state+1);
 	addEdge(*g, 'E', state+2, state+2);
+	(*g)->endState++;
 }
 
 Array* delta(Graph *g, int state, char key) {
@@ -582,7 +585,7 @@ void NFA2DFA(NFAModel *model, char *s) {
 	}
 	int i;
 	printf("---NFA2DFA---\n");
-//	printf("size of initStates is %d\n", getSize(initStates));
+	printf("size of initStates is %d\n", getSize(initStates));
 	for(i=0;i<getSize(initStates);i++) {
 		int *val = (int*)getByIndex(initStates, i, sizeof(int));
 		printf("%d,", *val);
@@ -619,7 +622,7 @@ void  testMergeSort() {
 }
 
 void testDelta() {
-	char *s = "a.";
+	char *s = ".*";
 	char *p = s;
 	Graph *g = NULL;
 	while(*p != '\0') {
@@ -660,7 +663,7 @@ void testDelta() {
 	}
 
 	NFAModel *model = convertToNFA(g);
-	NFA2DFA(model, "aa");
+	NFA2DFA(model, "ab");
 }
 
 void testMap() {
