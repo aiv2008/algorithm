@@ -108,3 +108,5 @@ Array *delta2(Array ***states, int state, HashMap *cMap, char c);
 //void eclosure(Array ***states, int rowSize, int colSize, HashMap *colMap, Array **dest);
 
 Array *eclosure(Array ***states, int state, HashMap *cMap);
+
+void addDocNFA(Graph **g);
