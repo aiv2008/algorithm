@@ -559,7 +559,11 @@ NFAModel *convertToNFA(Graph *g) {
 			}
 		}	
 	}
-	model->endState = g->endState;
+//	model->endState = g->endState;
+	Array *rowTitle = model->rowTitle;
+	int *val = (int*)getLast(rowTitle, sizeof(int));
+	model->endState = *val;
+	printf("model->endState=%d\n", model->endState);
 	return model;
 }
 void iterateArray(Array *a) {
@@ -734,8 +738,8 @@ bool isMatch(char *s, char *p) {
 }
 
 void testDelta() {
-	char *s = "mississippi";
-	char *p = "mis*is*p*.";
+	char *s = "aaa";
+	char *p = "a*a";
 	bool b = isMatch(s, p);
 	printf("result is %d\n", b);
 }
