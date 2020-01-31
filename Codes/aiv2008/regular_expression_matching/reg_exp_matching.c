@@ -386,7 +386,35 @@ void addDocNFA(Graph **g) {
 		printf("edgeCount=%d\n", edgeCount);
 		addEdge(*g, 'E', state+2, state+(edgeCount++));
 		addEdge(*g, i+97, state+(edgeCount++), state+edgeCount);
-		addEdge(*g, 'E', state+edgeCount, size-1);
+		addEdge(*g, 'E', state+edgeCount, state+54);
+	}
+	addEdge(*g, 'E', state+55, state+55);
+	(*g)->endState++;
+}
+
+void addDocStarNFA(Graph **g) {
+	if(g == NULL) return;
+	int state = *g == NULL ? -1 : (*g)->endState;
+	if(state >= 0) {
+		addState(g);
+		state = (*g)->endState;
+		printf("endState2=%d\n", state);
+		addEdge(*g, 'E', state, state);
+	}
+	int size = 55;
+	int i;
+	for(i=0;i<size;i++) {
+		addState(g);
+	}
+	addEdge(*g, 'E', state+1, state+1);
+	int edgeCount = 2;
+	for(i=0;i<26;i++) {
+		printf("edgeCount=%d\n", edgeCount);
+		addEdge(*g, 'E', state+2, state+(edgeCount++));
+		addEdge(*g, i+97, state+(edgeCount++), state+edgeCount);
+		addEdge(*g, 'E', state+edgeCount, state+edgeCount-2);
+		addEdge(*g, 'E', state+2, state+54);
+		addEdge(*g, 'E', state+edgeCount, state+54);
 	}
 	addEdge(*g, 'E', state+55, state+55);
 	(*g)->endState++;
@@ -784,6 +812,33 @@ void testDocNFA() {
 	printf("endState=%d\n", g->endState);
 }
 
+void testDocStarNFA() {
+	Graph *g = NULL;
+	addDocStarNFA(&g);
+	int *node = g->node;
+	char **edges = g->edge;
+	int size = g->size;
+	int i;
+	for(i=0;i<size;i++) {
+		printf("%d,", *(node+i));
+	}
+	printf("\n");
+	char *edge = NULL;
+	for(i=0;i<size;i++) {
+		edge = *(edges+i);
+		if(edge == NULL) {
+			printf("0");
+		}else {
+			int j;
+			for(j=0;j<size;j++) {
+				printf("%c,", *(edge+j));
+			}
+		}
+		printf("\n");
+	}
+	printf("endState=%d\n", g->endState);
+}
+
 int main(void) {
 
 //	testMap();
@@ -798,5 +853,8 @@ int main(void) {
 
 	testDocNFA();
 
+	testDocStarNFA();
+
 	return 0;
+
 }
