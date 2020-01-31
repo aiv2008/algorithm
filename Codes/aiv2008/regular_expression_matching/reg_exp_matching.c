@@ -6,6 +6,10 @@
 #define MAP_SIZE 7
 #define ARRAY_SIZE 10
 
+#define bool int
+#define true 1
+#define false 0
+
 //struct of the element of the hashmap
 typedef struct {
 	char key;
@@ -71,12 +75,17 @@ void swap_1(int* x, int* y)
 }
 
 char *getByIndex(Array *array, int index, int len) {
-	if(array == NULL) return -1;
+	if(array == NULL) return NULL;
 	if(index >= array->size) {
 		printf("index is out of bound!\n");
 		return -1;
 	}
 	return array->val+len*index;	
+}
+
+char *getLast(Array *array, int len) {
+	if(array == NULL) return NULL;
+	return array->val+len*(array->size-1);
 }
 
 //return the hashcode of the character
@@ -102,6 +111,7 @@ int get(HashMap *map, char key) {
 	}
 	return val;
 }
+
 
 void put(HashMap **map, char key, int val) {
 	if(map == NULL) { return ;}
@@ -600,8 +610,8 @@ void eclosureRecursion(Array ***states, Array **initStates, HashMap *cMap, int r
 //	return deltaRecursion(states, initStates, cMap, 'E'); 
 }
 
-void NFA2DFA(NFAModel *model, char *s) {
-	if(model == NULL || s == NULL || !strlen(s)) return;
+Array *NFA2DFA(NFAModel *model, char *s) {
+	if(model == NULL || s == NULL || !strlen(s)) return NULL;
 	HashMap *colTitle = model->colTitle;
 	Array *keys = getKeys(colTitle);
 	Array *rowTitle= model->rowTitle;
@@ -646,6 +656,7 @@ void NFA2DFA(NFAModel *model, char *s) {
 	}
 	printf("\n");
 	printf("endStates is %d\n", model->endState);
+	return initStates;
 }
 
 void  testMergeSort() {
@@ -675,22 +686,21 @@ void  testMergeSort() {
 	printf("\n");
 }
 
-void testDelta() {
-	char *s = ".*";
-	char *p = s;
+bool isMatch(char *s, char *p) {
+	char *pMove = p;
 	Graph *g = NULL;
-	while(*p != '\0') {
-		if(*(p+1) == '*') {
-			addKleenStarNFA(&g, *p);
-			p+=2;
-		} else if(*(p+1) == '.') {
-			printf("*p=%c, *(p+1)=%c\n", *p, *(p+1));
-			addStringNFA(&g, *p);
-			addStringNFA(&g, *p);
-			p+=2;
+	while(*pMove != '\0') {
+		if(*(pMove+1) == '*') {
+			if(*pMove == '.') {
+				addDocNFA(&g);
+				addDocStarNFA(&g);
+			}
+			else addKleenStarNFA(&g, *pMove);
+			pMove+=2;
 		} else {
-			addStringNFA(&g, *p);
-			p++;
+			if(*pMove == '.') addDocNFA(&g);
+			else addStringNFA(&g, *pMove);
+			pMove++;
 		}
 	}
 	
@@ -717,7 +727,17 @@ void testDelta() {
 	}
 
 	NFAModel *model = convertToNFA(g);
-	NFA2DFA(model, "ab");
+	Array *result = NFA2DFA(model, s);
+	int *last = (int*)getLast(result, sizeof(int));
+	if(model->endState == (last == NULL ? -1 : *last)) return true;
+	else return false;
+}
+
+void testDelta() {
+	char *s = "mississippi";
+	char *p = "mis*is*p*.";
+	bool b = isMatch(s, p);
+	printf("result is %d\n", b);
 }
 
 void testMap() {
@@ -843,7 +863,7 @@ int main(void) {
 
 //	testMap();
 
-//	testDelta();
+	testDelta();
 
 //	testArray();
 
@@ -851,9 +871,9 @@ int main(void) {
 
 //	testQueue();
 
-	testDocNFA();
+//	testDocNFA();
 
-	testDocStarNFA();
+//	testDocStarNFA();
 
 	return 0;
 
