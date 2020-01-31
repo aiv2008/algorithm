@@ -422,7 +422,8 @@ void addDocStarNFA(Graph **g) {
 //		printf("edgeCount=%d\n", edgeCount);
 		addEdge(*g, 'E', state+2, state+(edgeCount++));
 		addEdge(*g, i+97, state+(edgeCount++), state+edgeCount);
-		addEdge(*g, 'E', state+edgeCount, state+edgeCount-2);
+//		addEdge(*g, 'E', state+edgeCount, state+edgeCount-2);
+		addEdge(*g, 'E', state+edgeCount, state+1);
 		addEdge(*g, 'E', state+2, state+54);
 		addEdge(*g, 'E', state+edgeCount, state+54);
 	}
@@ -622,7 +623,7 @@ void eclosureRecursion(Array ***states, Array **initStates, HashMap *cMap, int r
 }
 
 Array *NFA2DFA(NFAModel *model, char *s) {
-	if(model == NULL || s == NULL || !strlen(s)) return NULL;
+	if(model == NULL || s == NULL) return NULL;
 	HashMap *colTitle = model->colTitle;
 	Array *keys = getKeys(colTitle);
 	Array *rowTitle= model->rowTitle;
@@ -630,12 +631,16 @@ Array *NFA2DFA(NFAModel *model, char *s) {
 	Array *initStates = NULL;
 	int st = 0;
 	add(&initStates, &st, sizeof(int));
+	printf("uerieruierueer\n");
 	eclosureRecursion(states, &initStates, colTitle, getSize(rowTitle));
+	printf("dfsdfsdfsdsdf\n");
+	printf("---print eclosureRecursion---\n");
+	iterateArray(initStates);	
 	char *p = s;
 	Array *newStates = NULL;
 	while(*p != '\0') {
-		printf("---111----\n");
-		iterateArray(initStates);
+//		printf("---111----\n");
+//		iterateArray(initStates);
 		int i;
 		for(i=0;i<getSize(initStates);i++) {
 			int *val = (int*)getByIndex(initStates, i, sizeof(int));
@@ -648,14 +653,14 @@ Array *NFA2DFA(NFAModel *model, char *s) {
 			}
 		}
 //		printf("\n");
-		printf("---222----\n");
-		printf("key=%c\n", *p);
+//		printf("---222----\n");
+//		printf("key=%c\n", *p);
 		initStates = newStates;
 		newStates = NULL;
-		iterateArray(initStates);
+//		iterateArray(initStates);
 		eclosureRecursion(states, &initStates, colTitle, getSize(rowTitle));
-		printf("---333---\n");
-		iterateArray(initStates);
+//		printf("---333---\n");
+//		iterateArray(initStates);
 		p++;
 	}
 	int i;
@@ -703,7 +708,7 @@ bool isMatch(char *s, char *p) {
 	while(*pMove != '\0') {
 		if(*(pMove+1) == '*') {
 			if(*pMove == '.') {
-				addDocNFA(&g);
+//				addDocNFA(&g);
 				addDocStarNFA(&g);
 			}
 			else addKleenStarNFA(&g, *pMove);
@@ -745,8 +750,8 @@ bool isMatch(char *s, char *p) {
 }
 
 void testDelta() {
-	char *s = "aaa";
-	char *p = "a*a";
+	char *s = "";
+	char *p = ".*";
 	bool b = isMatch(s, p);
 	printf("result is %d\n", b);
 }
