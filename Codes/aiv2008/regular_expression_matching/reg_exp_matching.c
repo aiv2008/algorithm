@@ -133,7 +133,7 @@ void put(HashMap **map, char key, int val) {
 		Entry *pEntry = entry;
 		while(pEntry->next != NULL) {
 			if(pEntry->key == key) {
-				printf("11key=%c, val=%d\n", key, val);
+			//	printf("11key=%c, val=%d\n", key, val);
 				pEntry->val = val;
 				break;
 			}
@@ -293,10 +293,12 @@ void addState(Graph **g) {
 		int capacity = (*g)->capacity;
 		(*g)->capacity = capacity + capacity/2;
 		int *node = (int*)calloc((*g)->capacity, sizeof(int));
+		/**
 		int j;
 		for(j=0;j<capacity;j++) {
-//			printf("node=%d,", *((*g)->node+j));
+			printf("node=%d,", *((*g)->node+j));
 		}
+		**/
 		memcpy(node, (*g)->node, sizeof(int)*capacity);
 		free((*g)->node);
 		(*g)->node = node;
@@ -422,7 +424,6 @@ void addDocStarNFA(Graph **g) {
 //		printf("edgeCount=%d\n", edgeCount);
 		addEdge(*g, 'E', state+2, state+(edgeCount++));
 		addEdge(*g, i+97, state+(edgeCount++), state+edgeCount);
-//		addEdge(*g, 'E', state+edgeCount, state+edgeCount-2);
 		addEdge(*g, 'E', state+edgeCount, state+1);
 		addEdge(*g, 'E', state+2, state+54);
 		addEdge(*g, 'E', state+edgeCount, state+54);
@@ -526,15 +527,17 @@ NFAModel *convertToNFA(Graph *g) {
 	NFAModel *model = (NFAModel*)calloc(1, sizeof(NFAModel));
 	model->colTitle = weight;
 	Array *keys = getKeys(weight);
-	//printf("size=%d,", size);
-	//printf("keys->size=%d\n", keys->size);
 	int i;
-//	printf("test in convertToNFA: \n");
+	/**
+	printf("size=%d,", size);
+	printf("keys->size=%d\n", keys->size);
+	printf("test in convertToNFA: \n");
 	for(i=0;i<keys->size;i++) {
 		char *cTest = getByIndex(keys, i, sizeof(char));
-//		printf("%c,", *cTest);
+		printf("%c,", *cTest);
 	}
-//	printf("\nend\n");
+	printf("\nend\n");
+**/
 	for(i=0;i<size;i++) {
 		add(&model->rowTitle, node+i, sizeof(int));	
 		int j;
@@ -550,6 +553,7 @@ NFAModel *convertToNFA(Graph *g) {
 					*(model->states+*(node+i)) = (Array**)calloc(keys->size, sizeof(Array*));
 				}
 				*(*(model->states+*(node+i))+value) = array;
+				/**
 				printf("%c: {", *c);
 				int k;
 				for(k=0;k<array->size;k++) {
@@ -557,6 +561,7 @@ NFAModel *convertToNFA(Graph *g) {
 					printf("%d,", *value );
 				}
 				printf("}\n");
+				**/
 			}
 		}	
 	}
@@ -564,7 +569,7 @@ NFAModel *convertToNFA(Graph *g) {
 	Array *rowTitle = model->rowTitle;
 	int *val = (int*)getLast(rowTitle, sizeof(int));
 	model->endState = *val+1;
-	printf("model->endState=%d\n", model->endState);
+//	printf("model->endState=%d\n", model->endState);
 	return model;
 }
 void iterateArray(Array *a) {
@@ -581,34 +586,22 @@ void eclosureRecursion(Array ***states, Array **initStates, HashMap *cMap, int r
 	Queue *q = NULL;
 	Array *a = (Array*)malloc(sizeof(Array));
 	memcpy(a, *initStates, sizeof(Array));
-//	printf("print every address\n");
-//	printf("%p, %p, %p, %p\n", &a, a, initStates, *initStates);
 	push(&q, a);
 	Element *t = top(q);
 	Array *keys = getKeys(cMap);
 	Array *temp = NULL;
 	while(t != NULL) {
 		a = (Array*)(t->val);
-//		printf("size of a is: %d\n", getSize(a));
-//		printf("print array a\n");
 //		iterateArray(a);
 		int i;
 		for(i=0;i<getSize(a);i++) {
 			int *val = (int*)getByIndex(a, i, sizeof(int));
-//			printf("print array a2\n");
-//			printf("%p, %p, %p, %p\n", &a, a, initStates, *initStates);
-//			iterateArray(a);
-//			iterateArray(*initStates);
-			printf("*val=%d\n", *val);
 			if(*val >= rowSize) break;
 			Array *b = eclosure(states, *val, cMap);
 			if(b != NULL) {
-				printf("print array b\n");
-//				iterateArray(b);
 				push(&q, b);
 //				mergeSort(initStates, b);
 				add(&temp, b, sizeof(Array));
-//				printf("%p, %p, %p, %p\n", &a, a, initStates, *initStates);
 //				iterateArray(a);
 			}
 		}
@@ -631,11 +624,11 @@ Array *NFA2DFA(NFAModel *model, char *s) {
 	Array *initStates = NULL;
 	int st = 0;
 	add(&initStates, &st, sizeof(int));
-	printf("uerieruierueer\n");
+//	printf("uerieruierueer\n");
 	eclosureRecursion(states, &initStates, colTitle, getSize(rowTitle));
-	printf("dfsdfsdfsdsdf\n");
-	printf("---print eclosureRecursion---\n");
-	iterateArray(initStates);	
+//	printf("dfsdfsdfsdsdf\n");
+//	printf("---print eclosureRecursion---\n");
+//	iterateArray(initStates);	
 	char *p = s;
 	Array *newStates = NULL;
 	while(*p != '\0') {
@@ -703,6 +696,10 @@ void  testMergeSort() {
 }
 
 bool isMatch(char *s, char *p) {
+	if(p == NULL || !strlen(p)) {
+		if(s == NULL || !strlen(s)) return true;
+		else return false;
+	}
 	char *pMove = p;
 	Graph *g = NULL;
 	while(*pMove != '\0') {
@@ -723,11 +720,15 @@ bool isMatch(char *s, char *p) {
 	int *node = g->node;
 	char **edges = g->edge;
 	int size = g->size;
+	/**
 	int i;
 	for(i=0;i<size;i++) {
 		printf("%d,", *(node+i));
 	}
 	printf("\n");
+	**/
+
+	/**
 	char *edge = NULL;
 	for(i=0;i<size;i++) {
 		edge = *(edges+i);
@@ -741,7 +742,7 @@ bool isMatch(char *s, char *p) {
 		}
 		printf("\n");
 	}
-
+**/
 	NFAModel *model = convertToNFA(g);
 	Array *result = NFA2DFA(model, s);
 	int *last = (int*)getLast(result, sizeof(int));
@@ -750,8 +751,8 @@ bool isMatch(char *s, char *p) {
 }
 
 void testDelta() {
-	char *s = "";
-	char *p = ".*";
+	char *s = "bcaccbbacbcbcab";
+	char *p = "b*.c*..*.b*b*.*c*";
 	bool b = isMatch(s, p);
 	printf("result is %d\n", b);
 }
