@@ -3,6 +3,11 @@
 #include<string.h>
 #include<malloc.h>
 
+#define ARRAY_SIZE 10
+#define bool char
+#define true '1'
+#define false '0'
+
 typedef struct {
 	//状态转移边，在thompson算法中， 每个节点最多只有两条转移边
 //	struct NFANode *nextEdge1;
@@ -25,6 +30,152 @@ typedef struct {
 	//注: end节点不能有任何指向其他节点的边
 	NFANode *end;
 } NFA;
+
+//struct of the element of the queue
+typedef struct {
+	char *val;
+	struct Element *next;
+} Element;
+
+//struct of the queue
+typedef struct {
+	struct Element *top;
+	struct Element *bottom;	
+} Queue;
+
+typedef struct {
+	char *val;
+	int size;
+	int capacity;
+} Array;
+
+char *getByIndex(Array *array, int index, int len) {
+	if(array == NULL) return NULL;
+	if(index >= array->size) {
+		printf("index is out of bound!\n");
+		return -1;
+	}
+	return array->val+len*index;	
+}
+
+char *getLast(Array *array, int len) {
+	if(array == NULL) return NULL;
+	return array->val+len*(array->size-1);
+}
+void push(Queue **queue, void *val) {
+	if(queue == NULL) return ;
+	if(*queue == NULL) {
+		*queue = (Queue*)calloc(1, sizeof(Queue));
+	}
+	Element *top = (Element*)calloc(1, sizeof(Element));
+	top->val = val;
+	top->next = NULL;
+	if((*queue)->top == NULL) {
+//		Element *top = (Element*)calloc(1, sizeof(Element));
+		(*queue)->top = top;
+		(*queue)->bottom = top;
+	} else {
+		((Element*)((*queue)->bottom))->next = top;
+		(*queue)->bottom = top;
+	}
+	top = NULL;
+}
+
+void pop(Queue **queue) {
+	if(queue == NULL || *queue == NULL ) return ;
+	Element *top = (*queue)->top;
+	(*queue)->top = top->next;
+	free(top);
+	top = NULL;
+	if((*queue)->top == NULL) {
+		free(*queue);
+		*queue = NULL;
+	}
+}
+
+Element *top(Queue *queue) {
+	if(queue == NULL) return NULL;
+	return queue->top;	
+}
+
+Element *bottom(Queue *queue) {
+	if(queue == NULL) return NULL;
+	return queue->bottom;
+}
+void iterateQueue(Queue *queue) {
+	Element *p = queue->top;
+	while(p != NULL) {
+//		printf("%c,", p->val);
+		Array *array = (Array*)(p->val);
+		int i;
+		for(i=0;i<getSize(array);i++) {
+			int *value = (int*)getByIndex(array, i, sizeof(int));
+			printf("%d,", *value);
+		}
+		p = p->next;
+	}
+	printf("\n");
+}
+
+void add(Array **array, char *val, int len) {
+	if(array == NULL) return ;
+	if(*array == NULL) {
+		*array = (Array*)calloc(1, sizeof(Array));
+		(*array)->capacity = ARRAY_SIZE;
+		char *a = (char*)calloc(ARRAY_SIZE, len);
+		(*array)->val = a;
+		a = NULL;		
+	} 
+	if((*array)->size + 1 > (*array)->capacity) {
+		(*array)->capacity = (*array)->capacity + ((*array)->capacity) / 2;
+		char *a = (char*)calloc((*array)->capacity, len);
+		//printf("size=%d\n", (*array)->size);
+		memcpy(a, (*array)->val, len*(*array)->size);
+		int size = (*array)->size;
+		(*array)->val = NULL;
+		(*array)->val = a;
+		a = NULL;
+	}
+	char *value = (*array)->val;
+	int size = (*array)->size;
+	memcpy(value+len*size, val, len);
+	(*array)->size = size + 1;
+}
+
+//add the element in the position of index
+void addByIndex(Array **array, char *val, int len, int index) {
+	if(array == NULL) return ;
+	if(*array == NULL) {
+		*array = (Array*)calloc(1, sizeof(Array));
+		(*array)->capacity = ARRAY_SIZE;
+		char *a = (char*)calloc(ARRAY_SIZE, len);
+		(*array)->val = a;
+		a = NULL;		
+	}
+	if(index >= (*array)->size) return; 
+	if((*array)->size + 1 > (*array)->capacity) {
+		(*array)->capacity = (*array)->capacity + ((*array)->capacity) / 2;
+		char *a = (char*)calloc((*array)->capacity, len);
+		memcpy(a, (*array)->val, len*(*array)->size);
+		int size = (*array)->size;
+		(*array)->val = NULL;
+		(*array)->val = a;
+		a = NULL;
+	}
+	char *value = (*array)->val;
+	int size = (*array)->size;
+	int i;
+	for(i=size-1;i>=index;i--) {
+		memcpy(value+len*(i+1), value+len*i, len);
+	}
+	memcpy(value+len*index, val, len);
+	(*array)->size = size + 1;
+}
+
+int getSize(Array *array) {
+	if(array == NULL) return 0;
+	return array->size;
+}
 
 NFANode *initNFANode(NFAEdge *edge1, NFAEdge *edge2, int state) {
 	if(state != 0x00 && state != 0x01) {
@@ -165,18 +316,74 @@ NFA *reg2NFA(char *p) {
 //	char *p = ".*";
 	char *pMove = p;
 	NFA *nfa = NULL;
+	NFA *nfaTmp = NULL;
 	while(*pMove != '\0') {
 		if(*pMove == '.') {
-			nfa = unonAllNFA();
+			nfaTmp = unonAllNFA();
 		} else if(*pMove == '*') {
-			nfa = kleenStarNFA(nfa); 
+			nfaTmp = kleenStarNFA(nfa); 
 		} else {
-			nfa = symbolNFA(*pMove);
+			nfaTmp = symbolNFA(*pMove);
 		}
+		nfa = concatNFA(nfa, nfaTmp);
+		nfaTmp = NULL;
 		pMove++;
 	}
 	return nfa;
 }
+
+Array *delta(NFANode *node, char value) {
+	if( node == NULL) {
+		printf("delta function failed: nfa node is null\n");
+		return NULL;
+	}
+	NFAEdge *edge1 = node->edge1;
+	NFAEdge *edge2 = node->edge2;
+	Array *dfaStates = NULL;
+	if(edge1 != NULL) {
+		if(edge1->value == value) {
+			add(&dfaStates, edge1->node, sizeof(NFANode));
+		}	
+	}
+	if(edge2 != NULL) {
+		if(edge2->value == value) {
+			add(&dfaStates, edge2->node, sizeof(NFANode));
+		}	
+	}
+	return dfaStates;
+}
+
+Array *eclosure(NFANode *node) {
+	if(node == NULL) {
+		printf("eclosure function failed: nfa node is null\n");
+		return NULL;
+	}
+	Array *dfaStates = NULL;
+	Queue *queue = NULL;
+	NFANode *pMove = node;
+	push(&queue, pMove);
+	Element *t = top(queue);
+	while(t != NULL) {
+		if(pMove != NULL) {
+			NFAEdge *edge1 = pMove->edge1;
+			NFAEdge *edge2 = pMove->edge2;
+			if(edge1 != NULL && edge1->node != NULL) {
+				push(&queue, edge1->node);
+				
+			}
+			if(edge2 != NULL && edge2->node != NULL) {
+				push(&queue, edge2->node);
+			}
+		}
+		pop(&queue);
+		t = top(queue);
+	}
+}
+
+void eclosure() {
+
+}
+
 
 void test() {
 	char *p = "c*a*b";
@@ -187,118 +394,3 @@ int main(void) {
 	test();
 }
 
-/**
-NFA *initEpsilon() {
-	return initSymbol(' ');
-}
-
-NFA *initSymbol(char c) {
-	NFA *nfa = (NFA*)calloc(1, sizeof(NFA));
-	if(nfa == NULL) {
-		printf("nfa calloc failed\n");
-		return;
-	}
-	NFANode *start = (NFANode*)calloc(1, sizeof(NFANode));
-	if(start == NULL) {
-		printf("nfa start node calloc failed\n");
-		free(nfa);
-		return;
-	}
-	start->value = 0x00;
-	start->state = 0;
-	NFANode *end = (NFANode*)calloc(1, sizeof(NFANode));
-	if(end == NULL) {
-		printf("nfa end node calloc failed\n");
-		free(start);
-		start = NULL;
-		free(nfa);
-		nfa = NULL;
-	}
-	end->value = c;
-	end->state = 1;
-	start->nextEdge1 = end;
-	nfa->start = start;
-	nfa->end = end;
-	return nfa;
-}
-
-void addNFANode(NFANode *start, NFANode *end) {
-	if(start == NULL || end == NULL) {
-		printf("start or end node is null\n");
-		return;
-	}
-	if(start->nextEdge1 == NULL) start->nextEdge1 = end;
-	else if(start->nextEdge2 == NULL) start->nextEdge2 = end;
-	else printf("cannot be more than 2 tranfer edge\n");
-}
-
-//basic operator: concat
-NFA *concatNFA(NFA *start, NFA **end) {
-	if(end == NULL) return start;
-	if(start == NULL && *end == NULL) return NULL;
-	else if(start == NULL) return *end;
-	else if(*end == NULL) return start;
-	NFANode *endOfStart = start->end;
-	NFANode *startOfEnd = (*end)->start;
-	if(startOfEnd->nextEdge1 == NULL) {
-		endOfStart->nextEdge1 = startOfEnd->nextEdge1;
-	} else if(startOfEnd->nextEdge2 == NULL) {
-		endOfStart->nextEdge2 = startOfEnd->nextEdge2;
-	} 
-	start->end = (*end)->end;
-	if((*end)->start != NULL) {
-		free((*end)->start);
-		(*end)->start = NULL;
-	}
-	(*end)->end = NULL;
-	free(*end);
-	*end = NULL;
-	return start;
-}
-
-//basic operator: union
-NFA *unon(NFA *nfaS, NFA **nfaT) {
-	if(nfaT == NULL) return NULL;
-	if(nfaS == NULL ) return *nfaT;
-	else if(*nfaT == NULL) return nfaS;
-	NFANode *start = (NFANode*)calloc(1, sizeof(NFANode));
-	NFANode *end = (NFANode*)calloc(1, sizeof(NFANode));
-	start->value = '\0';
-	end->value = '\0';
-	NFANode *startS = nfaS->start;
-	NFANode *startT = nfaT->start;
-	startS->value = ' ';
-	startT->value = ' ';
-	start->nextEdge1 = startS;
-	start->nextEdge2 = startT;
-
-}
-
-void initKleenStar(NFA *src) {
-	if(src == NULL) {
-		printf("nfa is null\n");
-		return NULL;
-	}
-	NFANode  *startNode = (NFANode*)calloc(1, sizeof(NFANode));
-	if(startNode == NULL) {
-		printf("initKleenStar: start node calloc failed\n");
-		return;
-	}
-	startNode->value = ' ';
-	NFANode  *endNode = (NFANode*)calloc(1, sizeof(NFANode));
-	if(endNode == NULL) {
-		printf("initKleenStar: end node calloc failed\n");
-		return;
-	}
-	endNode->value = '\0';
-	addNFANode(startNode, src->start);
-	addNFANode(start->end, src->start);
-	addNFANode(start->end, endNode);
-	addNFANode(startNode, endNode);
-	NFANode *srcEndNode = src->end;
-	srcEndNode->state = 0;
-	endNode->state = 1;
-	src->start = startNode;
-	src->end = endNode;
-}
-**/
