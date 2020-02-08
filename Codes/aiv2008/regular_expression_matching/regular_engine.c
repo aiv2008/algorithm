@@ -7,6 +7,7 @@
 #define bool char
 #define true '1'
 #define false '0'
+#define MAP_SIZE 13
 
 typedef struct {
 	//状态转移边，在thompson算法中， 每个节点最多只有两条转移边
@@ -21,15 +22,33 @@ typedef struct {
 
 typedef struct {
 //	NFANode *in;
-	NFANode *node;
+	struct NFANode *node;
 	char value;
 } NFAEdge;
 
 typedef struct {
-	NFANode *start;
+	struct NFANode *start;
 	//注: end节点不能有任何指向其他节点的边
-	NFANode *end;
+	struct NFANode *end;
+	//记录一下字母表
+	Array *alphabet;
 } NFA;
+
+typedef struct {
+	struct Array/**<NFANode*>**/ **states;
+	struct Array/**<DFAEdge*>**/ *edges;
+	int state;
+} DFANode;
+
+typedef struct {
+	struct DFANode *node;
+	char value;
+} DFAEdge;
+
+typedef struct {
+	struct DFANode *start;
+	struct DFANode *end;
+} DFA;
 
 //struct of the element of the queue
 typedef struct {
@@ -48,6 +67,16 @@ typedef struct {
 	int size;
 	int capacity;
 } Array;
+
+typedef struct {
+	int key;
+	char *value;
+} Entity;
+
+typedef struct {
+	struct Array/**<Entity>**/ **entity;
+} HashMap;
+
 
 char *getByIndex(Array *array, int index, int len) {
 	if(array == NULL) return NULL;
@@ -172,9 +201,121 @@ void addByIndex(Array **array, char *val, int len, int index) {
 	(*array)->size = size + 1;
 }
 
+//把src所有元素添加到dest
+void addAll(Array **dest, Array *src, int len) {
+	if(dest == NULL || src == NULL) return;
+	if(*dest == NULL) {
+		int i;
+		for(i=0;i<getSize(src);i++) {
+			char *value = getByIndex(src, i, len);
+			add(dest, value, len);	
+		}
+	}	
+}
+
+//把src所有元素添加到dest（去重复）
+void addAllDist(Array **dest, Array *src, int len) {
+
+}
+
 int getSize(Array *array) {
 	if(array == NULL) return 0;
 	return array->size;
+}
+
+int hashCode(int key) {
+	return key % MAP_SIZE;
+}
+
+void put(HashMap **map, int key, char *value, int valueLen) {
+	if(map == NULL) return ;
+	if(*map == NULL) {
+		*map = (HashMap*)malloc(sizeof(HashMap));
+		(*map)->entity = (Array**)calloc(MAP_SIZE, sizeof(Array*));
+		if((*map)->entity == NULL) {
+			printf("hash map put failed: entity calloc failed\n");
+			return;
+		}
+	}
+	int index = hashCode(key);
+	Array **entityArray = (*map)->entity;
+	if(*(entityArray+index) == NULL) {
+		Entity *entity = (Entity*)calloc(1, sizeof(Entity));
+		if(entity == NULL) {
+			printf("hash map put failed: entity calloc failed\n");
+			return;
+		}
+		entity->key = key;
+		entity->value = (char*)malloc(valueLen);
+		//entity->value = value;
+		memcpy(entity->value, value, valueLen);
+		add((*map)->entity+index, entity, sizeof(Entity));
+	} else {
+		Array *a = *(entityArray+index);
+		int i=0;
+		for(;i<getSize(a);i++) {
+			Entity *entity = (Entity*)getByIndex(a, i, sizeof(Entity));
+			if(entity->key == key) {
+				//entity->value = value;
+				memcpy(entity->value, value, valueLen);
+				break;
+			}
+		}
+		if(i == getSize(a)) {
+			Entity *entity = (Entity*)calloc(1, sizeof(Entity));
+			if(entity == NULL) {
+				printf("hash map put failed: entity calloc failed\n");
+				return;
+			}
+			entity->key = key;
+		//	entity->value = value;
+			entity->value = (char*)malloc(valueLen);
+			memcpy(entity->value,  value, valueLen);
+			add((*map)->entity+index, entity, sizeof(Entity));
+		}
+	}
+}
+
+char *get(HashMap *map, int key) {
+	if(map == NULL) return NULL;
+	int index = hashCode(key);
+	Array *a = *(map->entity+index);
+	if(a == NULL) return NULL;
+	char *result = NULL;
+	int i=0;
+	for(;i<getSize(a);i++) {
+		Entity *entity = (Entity*)getByIndex(a, i, sizeof(Entity));
+		if(entity->key == key) {
+			result = entity->value;
+			break;
+		}
+	}
+	return result;
+}
+
+void testMap(){
+	char c[4] = {'a','b','b','a'};
+	HashMap *map = NULL;
+	int i=0;
+	int origValue = 1;
+	for(;i<4;i++) {
+		int *value = (int*)get(map, c[i]);
+		printf("key=%c,", c[i]);
+		printf("value=%d\n", value == NULL ? -1 : *value);
+		if(value == NULL) {
+			put(&map, c[i], &origValue, sizeof(int));
+		} else {
+			int v = *value+1;
+			put(&map, c[i], &v, sizeof(int));
+		}
+	}
+	for(i=0;i<4;i++){
+		int *value = (int*)get(map, c[i]);
+	//	printf("key=%c, value=%d\n", c[i], *value);
+	printf("%c,",  c[i]);
+	printf("%d,", *value);
+	}
+	printf("\n");
 }
 
 NFANode *initNFANode(NFAEdge *edge1, NFAEdge *edge2, int state) {
@@ -317,6 +458,9 @@ NFA *reg2NFA(char *p) {
 	char *pMove = p;
 	NFA *nfa = NULL;
 	NFA *nfaTmp = NULL;
+	HashMap *map = NULL;
+	Array *array = NULL;
+	int origValue = 1;
 	while(*pMove != '\0') {
 		if(*pMove == '.') {
 			nfaTmp = unonAllNFA();
@@ -326,9 +470,17 @@ NFA *reg2NFA(char *p) {
 			nfaTmp = symbolNFA(*pMove);
 		}
 		nfa = concatNFA(nfa, nfaTmp);
+		if(*pMove>=97 && *pMove<=122) {
+			int *value = get(map, *pMove);
+			if(value != NULL) {
+				put(&map, *pMove, &origValue, sizeof(int));
+				add(&array, *pMove, sizeof(char));
+			}
+		}
 		nfaTmp = NULL;
 		pMove++;
 	}
+	nfa->alphabet = array;
 	return nfa;
 }
 
@@ -360,30 +512,81 @@ Array *eclosure(NFANode *node) {
 	}
 	Array *dfaStates = NULL;
 	Queue *queue = NULL;
+	HashMap *map = NULL;
 	NFANode *pMove = node;
 	push(&queue, pMove);
 	Element *t = top(queue);
+	int origValue = 1;
 	while(t != NULL) {
 		if(pMove != NULL) {
 			NFAEdge *edge1 = pMove->edge1;
 			NFAEdge *edge2 = pMove->edge2;
-			if(edge1 != NULL && edge1->node != NULL) {
-				push(&queue, edge1->node);
-				
+			if(edge1 != NULL && edge1->value ==' ' && edge1->node != NULL) {
+				int *value = (int*)get(map, edge1->node);
+				if(value == NULL) {
+					put(&map, edge1->node, &origValue, sizeof(int));
+					push(&queue, edge1->node);
+					add(&dfaStates, edge1->node, sizeof(NFANode));
+				}				
 			}
-			if(edge2 != NULL && edge2->node != NULL) {
-				push(&queue, edge2->node);
+			if(edge2 != NULL && edge2->value == ' ' && edge2->node != NULL) {
+				int *value = (int*)get(map, edge2->node);
+				if(value == NULL) {
+					put(&map, edge2->node, &origValue, sizeof(int));
+					push(&queue, edge2->node);
+					add(&dfaStates, edge2->node, sizeof(NFANode));
+				}				
 			}
 		}
 		pop(&queue);
 		t = top(queue);
 	}
+	return dfaStates;
 }
 
-void eclosure() {
-
+void updateDFANodeState(DFANode *node) {
+	if(node == NULL) return;
+	Array *states = node->states;
+	int i;
+	for(i=0;i<getSize(states);i++) {
+		NFANode *nfaNode = (NFANode*)getByIndex(states, i, sizeof(NFANode));
+		if(nfaNode->state == 1){
+			node->state = 1;
+			break;
+		}
+	}
 }
 
+DFA *nfa2DFA(NFA *nfa) {
+	if(nfa == NULL) return NULL;
+	//nfa的字母表
+	Array *alphabet = nfa->alphabet;
+	NFANode *nfaStartNode = nfa->start;
+	//nfa的初始状态值（只通过epsilon能到达的所有状态）
+	Array state0 = eclosure(nfaStartNode);
+	DFA *dfa = (DFA*)calloc(1, sizeof(DFA));
+	//dfa的初始状态
+	DFANode *dfaNode = (DFANode*) calloc(1, sizeof(DFANode));
+	dfaNode->states = state0;
+	updateDFANodeState(dfaNode);
+
+	HashMap *map = NULL;
+	Queue *queue = NULL;
+	Array *nextDFAEdge = NULL;
+	Array *nextDFANode = NULL;
+	int i;
+	for(i=0;i<getSize(state0);i++) {
+		NFANode *nfaNode = (NFANode*)getByIndex(state0, i, sizeof(NFANode));
+		int j;
+		for(j=0;j<getSize(alphabet);j++) {
+			char *c = getByIndex(alphabet, j, sizeof(char));
+			Array* nextNFAState = delta(nfaNode, *c) ;
+			if(nextNFAState != NULL && getSize(nextNFAState)) {
+				
+			}
+		}
+	}
+}
 
 void test() {
 	char *p = "c*a*b";
@@ -391,6 +594,7 @@ void test() {
 }
 
 int main(void) {
-	test();
+//	test();
+	testMap();
 }
 
