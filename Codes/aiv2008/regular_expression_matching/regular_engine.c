@@ -31,11 +31,11 @@ typedef struct {
 	//注: end节点不能有任何指向其他节点的边
 	struct NFANode *end;
 	//记录一下字母表
-	Array *alphabet;
+	struct Array *alphabet;
 } NFA;
 
 typedef struct {
-	struct Array/**<NFANode*>**/ **states;
+	struct Array/**<Array<NFANode*>>**/ *states;
 	struct Array/**<DFAEdge*>**/ *edges;
 	int state;
 } DFANode;
@@ -215,7 +215,21 @@ void addAll(Array **dest, Array *src, int len) {
 
 //把src所有元素添加到dest（去重复）
 void addAllDist(Array **dest, Array *src, int len) {
-
+	//先遍历两个数组， 以后优化为w二分法
+	if(dest == NULL || src == NULL) return;
+//	if(*dest == NULL) {
+		int i;
+		for(i=0;i<getSize(src);i++) {
+			int j;
+			char *valueI = getByIndex(src, i, len);
+			for(j=0;j<getSize(*dest);j++) {
+				char *valueJ = getByIndex(*dest, j, len);
+				if(*valueI == *valueJ) break;
+			}
+			//j等于dest的size， 说明没有重复的元素
+			if(j == getSize(*dest))	add(dest, valueI, len);
+		}
+//	}
 }
 
 int getSize(Array *array) {
@@ -294,28 +308,39 @@ char *get(HashMap *map, int key) {
 }
 
 void testMap(){
-	char c[4] = {'a','b','b','a'};
 	HashMap *map = NULL;
-	int i=0;
+	int a[] = {1,2,3,4,55,6};
+	int b[] = {4,5,6,7,8,9,9};
+	int c[] = {1,2,3,4,55,6};
+	Array *arrayA = NULL;
+	Array *arrayB = NULL;
+	Array *arrayC = NULL;
+	int i;
+	for(i=0;i<sizeof(a)/sizeof(a[0]);i++) {
+		add(&arrayA, &a[i], sizeof(int));
+	}
+	for(i=0;i<sizeof(b)/sizeof(b[0]);i++) {
+		add(&arrayB, &b[i], sizeof(int));
+	}
+	for(i=0;i<sizeof(c)/sizeof(c[0]);i++) {
+		add(&arrayC, &c[i], sizeof(int));
+	}
 	int origValue = 1;
-	for(;i<4;i++) {
-		int *value = (int*)get(map, c[i]);
-		printf("key=%c,", c[i]);
-		printf("value=%d\n", value == NULL ? -1 : *value);
-		if(value == NULL) {
-			put(&map, c[i], &origValue, sizeof(int));
-		} else {
-			int v = *value+1;
-			put(&map, c[i], &v, sizeof(int));
-		}
+	put(&map, arrayA, &origValue, sizeof(int));
+	put(&map, arrayB, &origValue, sizeof(int));
+	put(&map, arrayC, &origValue, sizeof(int));
+
+	int *valueA = (int*)get(map, arrayA);
+	if(valueA == NULL) {
+		put(&map, arrayA, &origValue, sizeof(int));
+	} else {
+		int v = *valueA + 1;
+		put(&map, arrayA, &v, sizeof(int));
 	}
-	for(i=0;i<4;i++){
-		int *value = (int*)get(map, c[i]);
-	//	printf("key=%c, value=%d\n", c[i], *value);
-	printf("%c,",  c[i]);
-	printf("%d,", *value);
-	}
-	printf("\n");
+	int *valueB = (int*)get(map, arrayB);
+	int *valueC = (int*)get(map, arrayC);
+	valueA = (int*)get(map, arrayA);
+	printf("a=%d, b=%d, c=%d\n", *valueA, *valueB, *valueC);
 }
 
 NFANode *initNFANode(NFAEdge *edge1, NFAEdge *edge2, int state) {
@@ -544,6 +569,17 @@ Array *eclosure(NFANode *node) {
 	return dfaStates;
 }
 
+DFAEdge *initDFAEdge(char c) {
+	DFAEdge *edge = (DFAEdge*)calloc(1, sizeof(DFAEdge));
+	if(edge == NULL) {
+		printf("init DFA edge node failed\n");
+		return NULL;
+	}
+	edge->value = c;
+	return edge;
+}
+
+
 void updateDFANodeState(DFANode *node) {
 	if(node == NULL) return;
 	Array *states = node->states;
@@ -563,38 +599,146 @@ DFA *nfa2DFA(NFA *nfa) {
 	Array *alphabet = nfa->alphabet;
 	NFANode *nfaStartNode = nfa->start;
 	//nfa的初始状态值（只通过epsilon能到达的所有状态）
-	Array state0 = eclosure(nfaStartNode);
+	Array *state0 = eclosure(nfaStartNode);
 	DFA *dfa = (DFA*)calloc(1, sizeof(DFA));
 	//dfa的初始状态
 	DFANode *dfaNode = (DFANode*) calloc(1, sizeof(DFANode));
 	dfaNode->states = state0;
 	updateDFANodeState(dfaNode);
 
-	HashMap *map = NULL;
+//	HashMap *map = NULL;
 	Queue *queue = NULL;
 	Array *nextDFAEdge = NULL;
 	Array *nextDFANode = NULL;
-	int i;
-	for(i=0;i<getSize(state0);i++) {
-		NFANode *nfaNode = (NFANode*)getByIndex(state0, i, sizeof(NFANode));
-		int j;
-		for(j=0;j<getSize(alphabet);j++) {
-			char *c = getByIndex(alphabet, j, sizeof(char));
-			Array* nextNFAState = delta(nfaNode, *c) ;
-			if(nextNFAState != NULL && getSize(nextNFAState)) {
-				
+	push(&queue, dfaNode);
+	Element *t = top(queue);
+	int origValue = 1;
+	while(t != NULL) {
+		DFANode *node = (DFANode*)(t->val);
+		Array/**<NFANode>**/ *midStateArray = node->states;
+		int i;
+		for(i=0;i<getSize(midStateArray);i++) {
+			NFANode *nfaNode = (NFANode*)getByIndex(midStateArray, i, sizeof(NFANode));
+			int j;
+			HashMap *map = NULL;
+			for(j=0;j<getSize(alphabet);j++) {
+				char *c = getByIndex(alphabet, j, sizeof(char));
+				Array/**<NFANode>**/* nextNFAState = delta(nfaNode, *c) ;
+				if(nextNFAState != NULL && getSize(nextNFAState)) {
+					int *v = (int*)get(map, *c);
+					if(v==NULL) {
+						DFAEdge *edge = initDFAEdge(*c);
+						add(&nextDFAEdge, edge, sizeof(DFAEdge));	
+						add(&nextDFANode, nextNFAState, sizeof(Array));
+						put(&map, *c, &origValue, sizeof(int));
+					} else {
+						int k;
+						for(k=0;k<getSize(nextDFAEdge);k++) {
+							//char *cc = getByIndex(nextDFAEdge, k, sizeof(char));
+							DFAEdge *edge = (DFAEdge*)getByIndex(nextDFAEdge, k, sizeof(DFAEdge));
+							if(edge->value == *c) {
+								Array/**<NFANode>**/ *a = (Array*)getByIndex(nextDFANode, k, sizeof(Array));
+								addAllDist(&a, nextNFAState, sizeof(NFANode));
+								break;
+							}
+						}
+					}
+					DFANode *dfn = (DFANode*)calloc(1, sizeof(DFANode));
+					dfn->states = nextNFAState;
+					dfn->edges = nextDFAEdge;
+					updateDFANodeState(dfn);
+					push(&queue, dfn);
+				}
 			}
 		}
+		pop(&queue);
+		t = top(queue);
 	}
+
 }
 
 void test() {
 	char *p = "c*a*b";
 	NFA *nfa = reg2NFA(p);
+	
+}
+
+void testQueue() {
+	int a[] = {9,8,7,6,5,4,3,2,1};
+	int b[]	= {2,4,6,8,10};
+	Array *arrayA = NULL;
+	Array *arrayB = NULL;
+	int i;
+	for(i=0;i<sizeof(a)/sizeof(a[0]);i++) {
+		add(&arrayA, &a[i], sizeof(int));
+	}
+	for(i=0;i<sizeof(b)/sizeof(b[0]);i++) {
+		add(&arrayB, &b[i], sizeof(int));
+	}
+	printf("print array a:\n");
+	for(i=0;i<getSize(arrayA);i++) {
+		int *value = (int*)getByIndex(arrayA, i, sizeof(int));
+		printf("%d,", *value);
+	}
+	printf("\nprint array b:\n");
+	for(i=0;i<getSize(arrayB);i++) {
+		int *value = (int*)getByIndex(arrayB, i, sizeof(int));
+		printf("%d,", *value);
+	}
+	printf("\n");
+	Queue *queue  = NULL;
+	push(&queue, arrayA);
+	push(&queue, arrayB);
+	Element *t = top(queue);
+	while(t != NULL) {
+		Array *tmpArray = (Array*)(t->val);
+		for(i=0;i<getSize(tmpArray);i++) {
+			int *value = (int*)getByIndex(tmpArray, i, sizeof(int));
+			printf("%d,", *value);
+		}
+		printf("\n");
+		pop(&queue);
+		t = top(queue);
+	}
+}
+
+void testArray() {
+	int a[] = {9,8,7,6,5,4,3,2,1};
+	int b[]	= {2,4,6,8,10};
+	Array *arrayA = NULL;
+	Array *arrayB = NULL;
+	int i;
+	for(i=0;i<sizeof(a)/sizeof(a[0]);i++) {
+		add(&arrayA, &a[i], sizeof(int));
+	}
+	for(i=0;i<sizeof(b)/sizeof(b[0]);i++) {
+		add(&arrayB, &b[i], sizeof(int));
+	}
+	printf("print array a:\n");
+	for(i=0;i<getSize(arrayA);i++) {
+		int *value = (int*)getByIndex(arrayA, i, sizeof(int));
+		printf("%d,", *value);
+	}
+	printf("\nprint array b:\n");
+	for(i=0;i<getSize(arrayB);i++) {
+		int *value = (int*)getByIndex(arrayB, i, sizeof(int));
+		printf("%d,", *value);
+	}
+	printf("\n");
+	addAllDist(&arrayA, arrayB, sizeof(int));
+	printf("print array a:\n");
+	printf("size of array a is: %d\n", getSize(arrayA));
+	for(i=0;i<getSize(arrayA);i++) {
+		int *value = (int*)getByIndex(arrayA, i, sizeof(int));
+		printf("%d,", *value);
+	}
+	printf("\n");
 }
 
 int main(void) {
 //	test();
-	testMap();
+//	testMap();
+//	testArray();
+	testQueue();
 }
 
