@@ -47,7 +47,7 @@ typedef struct {
 
 typedef struct {
 	struct DFANode *start;
-	struct DFANode *end;
+	struct Array/**<DFANode>**/ *ends;
 } DFA;
 
 //struct of the element of the queue
@@ -569,6 +569,18 @@ Array *eclosure(NFANode *node) {
 	return dfaStates;
 }
 
+Array *closure(Array/**<NFANode>**/ *nodes) {
+	if(nodes == NULL) return NULL;
+	int i;
+	Array *result = NULL;
+	for(i=0;i<getSize(nodes);i++) {
+		NFANode *node = (NFANode*)getByIndex(nodes, i, sizeof(NFANode));
+		Array *a = eclosure(node);
+		addAllDist(&result, a, sizeof(NFANode));
+	}
+	return result;
+}
+
 DFAEdge *initDFAEdge(char c) {
 	DFAEdge *edge = (DFAEdge*)calloc(1, sizeof(DFAEdge));
 	if(edge == NULL) {
@@ -594,7 +606,10 @@ void updateDFANodeState(DFANode *node) {
 }
 
 DFA *nfa2DFA(NFA *nfa) {
-	if(nfa == NULL) return NULL;
+	if(nfa == NULL) {
+		printf("nfa to dfa failed: nfa is null\n");
+		return NULL;
+	}
 	//nfa的字母表
 	Array *alphabet = nfa->alphabet;
 	NFANode *nfaStartNode = nfa->start;
@@ -605,8 +620,11 @@ DFA *nfa2DFA(NFA *nfa) {
 	DFANode *dfaNode = (DFANode*) calloc(1, sizeof(DFANode));
 	dfaNode->states = state0;
 	updateDFANodeState(dfaNode);
-
-//	HashMap *map = NULL;
+	dfa->start = dfaNode;
+	Array *ends = NULL;
+	if(dfaNode->state == 1) {
+		add(&ends, dfaNode, sizeof(DFANode));
+	}	
 	Queue *queue = NULL;
 	Array *nextDFAEdge = NULL;
 	Array *nextDFANode = NULL;
@@ -625,6 +643,7 @@ DFA *nfa2DFA(NFA *nfa) {
 				char *c = getByIndex(alphabet, j, sizeof(char));
 				Array/**<NFANode>**/* nextNFAState = delta(nfaNode, *c) ;
 				if(nextNFAState != NULL && getSize(nextNFAState)) {
+					nextNFAState = closure(nextNFAState);
 					int *v = (int*)get(map, *c);
 					if(v==NULL) {
 						DFAEdge *edge = initDFAEdge(*c);
@@ -647,6 +666,9 @@ DFA *nfa2DFA(NFA *nfa) {
 					dfn->states = nextNFAState;
 					dfn->edges = nextDFAEdge;
 					updateDFANodeState(dfn);
+					if(dfn->state == 1) {
+						add(&ends, dfn, sizeof(DFANode));
+					}	
 					push(&queue, dfn);
 				}
 			}
@@ -654,13 +676,49 @@ DFA *nfa2DFA(NFA *nfa) {
 		pop(&queue);
 		t = top(queue);
 	}
+	if(ends == NULL){
+	//	printf("nfa to dfa failed: no end state in DFA\n");
+	//	return NULL;
+	}
+	dfa->ends = ends;
+	return dfa;
+}
 
+void iterateDFA(DFA *dfa) {
+	if(dfa == NULL) return;
+	Queue *queue = NULL;
+	push(&queue, dfa->start);
+	Element *t = top(queue);
+	while(t != NULL) {
+		DFANode *node = (DFANode*)(t->val);
+		Array *states = node->states;
+		Array *edges = node->edges;
+		int i;
+		for(i=0;i<getSize(edges);i++) {
+			DFAEdge *edge = (DFAEdge*)getByIndex(edges, i, sizeof(DFAEdge));
+			Array *state = (Array*)getByIndex(states, i, sizeof(Array));
+			printf("edge=%c,", edge->value);
+			int j;
+			printf("state={");
+			for(j=0;j<getSize(state);j++) {
+				NFANode *n = (NFANode*)getByIndex(state, j, sizeof(NFANode));
+				printf("%d,", n->state);
+			}
+			printf("}\n");
+			if(edge->node != NULL) {
+				push(&queue, edge->node);
+			}
+		}
+		pop(&queue);
+		t = top(queue);
+	}
 }
 
 void test() {
 	char *p = "c*a*b";
 	NFA *nfa = reg2NFA(p);
-	
+	DFA *dfa = nfa2DFA(nfa);
+	iterateDFA(dfa);
 }
 
 void testQueue() {
@@ -736,9 +794,9 @@ void testArray() {
 }
 
 int main(void) {
-//	test();
+	test();
 //	testMap();
 //	testArray();
-	testQueue();
+//	testQueue();
 }
 
