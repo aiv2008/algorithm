@@ -504,8 +504,9 @@ NFA *unonAllNFA() {
 	NFANode *endNode = initNFANode(NULL, 1);
 	NFAEdge *endEdge = NULL;
 	NFAEdge *startEdge = NULL;
+	Array/**<char>**/ *alphabet = NULL;
 	int i;
-	for(i=97;i<122;i++) {
+	for(i=97;i<=122;i++) {
 		NFA *nfa = symbolNFA(i);
 		startEdge = initNFAEdge(' ');
 		NFANode *start = nfa->start;
@@ -518,9 +519,11 @@ NFA *unonAllNFA() {
 		add(&endEdgeAry, endEdge, sizeof(NFAEdge));
 		end->edge = endEdgeAry;
 		end->state = 0;
+		add(&alphabet, &i, sizeof(char));
 	}
 	NFANode *startNode = initNFANode(startEdgeAry, 0);
 	NFA *nfa = initNFA(startNode, endNode);
+	nfa->alphabet = alphabet;
 	return nfa;
 }
 
@@ -532,10 +535,14 @@ NFA *reg2NFA(char *p) {
 	HashMap *map = NULL;
 	Array *array = NULL;
 	int origValue = 1;
+	//是否已包含所有字母表里的字母， 因为当模式里含有'.'时， 即包含字母表的所有字母
+	bool isAllAlphabet = false;
 	while(*pMove != '\0') {
 		if(*(pMove+1) == '*') {
 			if(*pMove == '.') {
 				nfaTmp = unonAllNFA();
+				isAllAlphabet = true; 
+				array = nfaTmp->alphabet;
 			} else {
 				nfaTmp = symbolNFA(*pMove);
 			}
@@ -545,6 +552,8 @@ NFA *reg2NFA(char *p) {
 		} else {
 			if(*pMove == '.') {
 				nfaTmp = unonAllNFA();
+				isAllAlphabet = true; 
+				array = nfaTmp->alphabet;
 			} else {
 				nfaTmp = symbolNFA(*pMove);
 			}
@@ -552,7 +561,7 @@ NFA *reg2NFA(char *p) {
 			pMove++;
 		}
 
-		if(*pMove>=97 && *pMove<=122) {
+		if(!isAllAlphabet && *pMove>=97 && *pMove<=122) {
 			int *value = (int*)get(map, *pMove);
 			if(value == NULL) {
 				put(&map, *pMove, &origValue, sizeof(int));
@@ -620,8 +629,13 @@ Array *eclosure(NFANode *node) {
 	Element *t = top(queue);
 	int origValue = 1;
 	while(t != NULL) {
+		pMove = (NFANode*)(t->val);
+//		if(pMove->state== 1) {
+//			printf("reach the final state\n");
+//		}
 		if(pMove != NULL) {
 			Array *edgeAry = pMove->edge;
+	//		printf("size of edgeAry is %d\n", getSize(edgeAry));
 			int i;
 			for(i=0;i<getSize(edgeAry);i++) {
 				NFAEdge *edge = (NFAEdge*)getByIndex(edgeAry, i, sizeof(NFAEdge));
@@ -634,26 +648,6 @@ Array *eclosure(NFANode *node) {
 					}				
 				}
 			}
-				/**
-			NFAEdge *edge1 = pMove->edge1;
-			NFAEdge *edge2 = pMove->edge2;
-			if(edge1 != NULL && edge1->value ==' ' && edge1->node != NULL) {
-				int *value = (int*)get(map, edge1->node);
-				if(value == NULL) {
-					put(&map, edge1->node, &origValue, sizeof(int));
-					push(&queue, edge1->node);
-					add(&dfaStates, edge1->node, sizeof(NFANode));
-				}				
-			}
-			if(edge2 != NULL && edge2->value == ' ' && edge2->node != NULL) {
-				int *value = (int*)get(map, edge2->node);
-				if(value == NULL) {
-					put(&map, edge2->node, &origValue, sizeof(int));
-					push(&queue, edge2->node);
-					add(&dfaStates, edge2->node, sizeof(NFANode));
-				}				
-			}
-			**/
 		}
 		pop(&queue);
 		t = top(queue);
@@ -802,6 +796,7 @@ DFA *nfa2DFA(NFA *nfa) {
 	printNFANode(nfaStartNode);
 	//nfa的初始状态值（只通过epsilon能到达的所有状态）
 	Array *state0 = eclosure(nfaStartNode);
+//	printf("size of state0 array is %d\n", getSize(state0));
 	DFA *dfa = (DFA*)calloc(1, sizeof(DFA));
 	//dfa的初始状态
 	DFANode *dfaNode = (DFANode*) calloc(1, sizeof(DFANode));
@@ -826,6 +821,7 @@ DFA *nfa2DFA(NFA *nfa) {
 			NFANode *nfaNode = (NFANode*)getByIndex(midStateArray, i, sizeof(NFANode));
 			int j;
 			HashMap *map = NULL;
+//			printf("size of alphabet is %d\n", getSize(alphabet));
 			for(j=0;j<getSize(alphabet);j++) {
 				char *c = getByIndex(alphabet, j, sizeof(char));
 				Array/**<NFANode>**/* nextNFAState = delta(nfaNode, *c) ;
@@ -905,16 +901,17 @@ void iterateDFA(DFA *dfa) {
 }
 
 void test() {
-	char *p = "c*a*b";
+	char *p = ".*";
 	NFA *nfa = reg2NFA(p);
 //	NFANode *start = nfa->start;
 //	printf("print start node\n");
 //	printNFANode(start);
 //	NFANode *end = nfa->end;
 //	printf("end node is %p, state is %d\n",end, end->state);
-	iterateNFA(nfa);
-//	DFA *dfa = nfa2DFA(nfa);
-//	iterateDFA(dfa);
+//	iterateNFA(nfa);
+	printf("size of alphabet is %d\n", getSize(nfa->alphabet));
+	DFA *dfa = nfa2DFA(nfa);
+	iterateDFA(dfa);
 }
 
 void testQueue() {
