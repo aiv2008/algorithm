@@ -561,24 +561,16 @@ NFA *reg2NFA(char *p) {
 			pMove++;
 		}
 
-		if(!isAllAlphabet && *pMove>=97 && *pMove<=122) {
-			int *value = (int*)get(map, *pMove);
+		if(isAllAlphabet == false && *p>=97 && *p<=122) {
+			int *value = (int*)get(map, *p);
 			if(value == NULL) {
-				put(&map, *pMove, &origValue, sizeof(int));
-				add(&array, pMove, sizeof(char));
+				put(&map, *p, &origValue, sizeof(int));
+				add(&array, p, sizeof(char));
 			}
 		}
 		nfaTmp = NULL;
 	}
 	nfa->alphabet = array;
-	/**
-	int i;
-	for(i=0;i<getSize(array);i++) {
-		char *c = getByIndex(array, i, sizeof(char));
-		printf("%c,", *c);
-	}
-	printf("\n");
-	**/
 	return nfa;
 }
 
@@ -598,24 +590,10 @@ Array *delta(NFANode *node, char value) {
 			}	
 		}
 	}
-	/**
-	NFAEdge *edge1 = node->edge1;
-	NFAEdge *edge2 = node->edge2;
-	Array *dfaStates = NULL;
-	if(edge1 != NULL) {
-		if(edge1->value == value) {
-			add(&dfaStates, edge1->node, sizeof(NFANode));
-		}	
-	}
-	if(edge2 != NULL) {
-		if(edge2->value == value) {
-			add(&dfaStates, edge2->node, sizeof(NFANode));
-		}	
-	}
-	**/
 	return dfaStates;
 }
 
+//从node出发，只通过epsilon边能到达的节点， 但不包括node本身
 Array *eclosure(NFANode *node) {
 	if(node == NULL) {
 		printf("eclosure function failed: nfa node is null\n");
@@ -680,6 +658,7 @@ void printNFANode(NFANode *node) {
 		if(edge == NULL) {
 			printf("edge is null\n");
 		}else {
+			printf("edge address=%p,", edge);
 			if(edge->value == ' ') {
 				printf("edge value=epsilon\n");
 			} else {
@@ -687,29 +666,6 @@ void printNFANode(NFANode *node) {
 			}
 		}
 	}
-
-/**
-	NFAEdge *edge1 = node->edge1;
-	NFAEdge *edge2 = node->edge2;
-	if(edge1 == NULL) {
-		printf("edge1 is null\n");
-	}else {
-		if(edge1->value == ' ') {
-			printf("edge1 value=epsilon\n");
-		} else {
-			printf("edge1 value=%c\n", edge1->value);
-		}
-	}
-	if(edge2 == NULL) {
-		printf("edge2 is null\n");
-	}else {
-		if(edge2->value == ' ') {
-			printf("edge2 value=epsilon\n");
-		} else {
-			printf("edge2 value=%c\n", edge2->value);
-		}
-	}
-	**/
 }
 
 void iterateNFA(NFA *nfa) {
@@ -731,6 +687,7 @@ void iterateNFA(NFA *nfa) {
 		for(i=0;i<getSize(edgeAry);i++) {
 			NFAEdge *edge = (NFAEdge*)getByIndex(edgeAry, i, sizeof(NFAEdge));
 			if(edge != NULL && edge->node != NULL) {
+				printf("edge->node=%p\n", edge->node);
 				int *value = (int*)get(map, edge->node);
 				if(value == NULL) {
 					put(&map, edge->node, &origValue, sizeof(int));
@@ -738,24 +695,6 @@ void iterateNFA(NFA *nfa) {
 				}
 			}
 		}
-/**
-		NFAEdge *edge1 = node->edge1;
-		NFAEdge *edge2 = node->edge2;
-		if(edge1 != NULL && edge1->node != NULL) {
-			int *value = (int*)get(map, edge1->node);
-			if(value == NULL) {
-				put(&map, edge1->node, &origValue, sizeof(int));
-				push(&queue, edge1->node);
-			}
-		}
-		if(edge2 != NULL && edge2->node != NULL) {
-			int *value = (int*)get(map, edge2->node);
-			if(value == NULL) {
-				put(&map, edge2->node, &origValue, sizeof(int));
-				push(&queue, edge2->node);
-			}
-		}
-		**/
 		pop(&queue);
 		t = top(queue);
 	}
@@ -772,6 +711,30 @@ DFAEdge *initDFAEdge(char c) {
 }
 
 
+DFANode *initDFANode(Array *states, Array *edges) {
+	if(states == NULL) {
+		printf("init dfa node failed: states is null\n");
+		return NULL;
+	}
+	DFANode *node = (DFANode*)malloc(sizeof(DFANode));
+	if(node == NULL) {
+		printf("init dfa node failed: node malloc space failed\n");
+		return NULL;
+	}
+	node->states = states;
+	node->edges = edges;
+	node->state = 0;
+	int i;
+	for(i=0;i<getSize(states);i++) {
+		NFANode *nfaNode = (NFANode*)getByIndex(states, i, sizeof(NFANode));
+		if(nfaNode->state == 1) {
+			node->state = 1;
+			break;
+		}
+	}
+	return node;
+}
+
 void updateDFANodeState(DFANode *node) {
 	if(node == NULL) return;
 	Array *states = node->states;
@@ -785,6 +748,37 @@ void updateDFANodeState(DFANode *node) {
 	}
 }
 
+void printDFANode(DFANode *node) {
+	if(node == NULL) return;
+	Array /**<Array<NFANode>>**/ *states = node->states;
+	Array /**<DFAEdge>**/ *edges = node->edges;
+	int i;
+	printf("print nfa nodes:\n");
+	for(i=0;i<getSize(states);i++) {
+		Array /**<NFANode>**/ *nfaNodesAry = (Array*)getByIndex(states, i, sizeof(NFANode));
+		int j;
+		for(j=0;j<getSize(nfaNodesAry);j++) {
+			NFANode *nfaNode = (NFANode*)getByIndex(nfaNodesAry, j, sizeof(NFANode));
+			printf("%p,", nfaNode);
+		}
+		printf("\n");
+	}
+	printf("print dfa edges:\n");
+	for(i=0;i<getSize(edges);i++){
+		DFAEdge *edge = (DFAEdge*)getByIndex(edges, i, sizeof(DFAEdge));
+		printf("%c,", edge->value);
+	}
+	printf("\n");
+}
+
+bool compareDFANode(DFANode *dfn1, DFANode *dfn2) {
+	if(dfn1 == NULL && dfn2 == NULL) return true;
+	else if(dfn1 == NULL || dfn2 == NULL) return false;
+	HashMap *map = NULL;
+	int i;
+	for(i=0;i<getSize(dfn1-><F10>))
+}
+
 DFA *nfa2DFA(NFA *nfa) {
 	if(nfa == NULL) {
 		printf("nfa to dfa failed: nfa is null\n");
@@ -793,15 +787,20 @@ DFA *nfa2DFA(NFA *nfa) {
 	//nfa的字母表
 	Array *alphabet = nfa->alphabet;
 	NFANode *nfaStartNode = nfa->start;
-	printNFANode(nfaStartNode);
+//	printNFANode(nfaStartNode);
 	//nfa的初始状态值（只通过epsilon能到达的所有状态）
 	Array *state0 = eclosure(nfaStartNode);
-//	printf("size of state0 array is %d\n", getSize(state0));
+	// 把nfaStartNode添加到数组state0里面
+	add(&state0, nfaStartNode, sizeof(NFANode));
+	printf("after size of state0 array is %d\n", getSize(state0));
+	DFANode *dfaNode = initDFANode(state0, NULL);
 	DFA *dfa = (DFA*)calloc(1, sizeof(DFA));
 	//dfa的初始状态
-	DFANode *dfaNode = (DFANode*) calloc(1, sizeof(DFANode));
-	dfaNode->states = state0;
-	updateDFANodeState(dfaNode);
+//	DFANode *dfaNode = (DFANode*) calloc(1, sizeof(DFANode));
+//	dfaNode->states = state0;
+//	updateDFANodeState(dfaNode);
+	printDFANode(dfaNode);
+//	return NULL;
 	dfa->start = dfaNode;
 	Array *ends = NULL;
 	if(dfaNode->state == 1) {
@@ -901,17 +900,17 @@ void iterateDFA(DFA *dfa) {
 }
 
 void test() {
-	char *p = ".*";
+	char *p = "a*";
 	NFA *nfa = reg2NFA(p);
 //	NFANode *start = nfa->start;
 //	printf("print start node\n");
 //	printNFANode(start);
 //	NFANode *end = nfa->end;
 //	printf("end node is %p, state is %d\n",end, end->state);
-//	iterateNFA(nfa);
-	printf("size of alphabet is %d\n", getSize(nfa->alphabet));
+	iterateNFA(nfa);
+//	printf("size of alphabet is %d\n", getSize(nfa->alphabet));
 	DFA *dfa = nfa2DFA(nfa);
-	iterateDFA(dfa);
+//	iterateDFA(dfa);
 }
 
 void testQueue() {
