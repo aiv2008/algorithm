@@ -36,8 +36,8 @@ typedef struct {
 } NFA;
 
 typedef struct {
-	struct Array/**<Array<NFANode*>>**/ *states;
-	struct Array/**<DFAEdge*>**/ *edges;
+	struct Array/**<NFANode>**/ *states;
+	struct Array/**<DFAEdge>**/ *edges;
 	int state;
 } DFANode;
 
@@ -78,6 +78,118 @@ typedef struct {
 	struct Array/**<Entity>**/ **entity;
 } HashMap;
 
+
+void swap(char *a, char *b, int len) {
+	char *temp = malloc(len);
+	memcpy(temp, a, len);
+	memcpy(a, b, len);
+	memcpy(b, temp, len);
+	free(temp);
+	temp = NULL;
+}
+int myPartition(char* array, int start, int end, int len)
+{
+	if(array == NULL)
+	{
+		printf("array cannot be null\n");
+		return -1;
+	}
+	if(start < 0)
+	{
+		printf("index must begin with 1\n");
+		return -1;
+	}
+	int i = start - 1;
+	int j = start;
+	if(j < end)
+	{
+		while(j < end)
+		{
+			if(*(array+len*j) <= *(array+len*end))
+			{
+				i++;
+				if(i != j)
+				{
+					swap(array+len*j, array+len*i, sizeof(int));
+				}
+			}
+			j++;
+		}
+		if(i+1 != end)
+		{
+			swap(array+len*(i+1), array+len*end, sizeof(int));
+			return i+1;
+		}
+		else
+		{
+			return end;
+		}
+
+	}
+	return -1;
+}
+void myQuicksort(char* array, int start, int end, int len)
+{
+	if(array == NULL)
+	{
+		printf("array cannot be null\n");
+		return ;
+	}
+	if(start < end)
+	{
+		int partitionIndex = myPartition(array, start, end, len);
+		if(partitionIndex < 0)
+		{
+		    printf("partitionIndex must larger than 0\n");
+		    return ;
+		}
+		myQuicksort(array, start, partitionIndex-1, len);
+		myQuicksort(array, partitionIndex+1, end, len);
+	}
+}
+
+int myRandomizedPartition(char* array, int start, int end, int len)
+{
+	if(start < 0)
+	{
+		printf("quicksort myRandomizedPartition: index must begin with 1\n");
+		return -1;
+	}
+	if(start > end)
+	{
+		printf("quicksort myRandomizedPartition: start must smaller than end\n");
+		return -1;
+	}
+	srand(time(0));
+    int randIndex = start + rand()%(end - start);
+	if(randIndex != end)
+			swap(array+len*randIndex, array+len*end, sizeof(int));
+	return myPartition(array, start, end, len);
+}
+void myRandomizedQuicksort(char* array, int start, int end, int len)
+{
+	if(array == NULL)
+	{
+		printf("quicksort myRandomizedQuicksort: array cannot be null\n");
+		return ;
+	}
+	if(start < end)
+	{
+		int partitionIndex = myRandomizedPartition(array, start, end, len);
+		if(partitionIndex < 0)
+		{
+		    printf("quicksort myRandomizedQuicksort: partitionIndex must larger than 0\n");
+		    return ;
+		}
+		myRandomizedQuicksort(array, start, partitionIndex-1, len);
+		myRandomizedQuicksort(array, partitionIndex+1, end, len);
+	}
+}
+
+void myRandomizedQuicksortArray(Array *array, int start, int end, int len) {
+	if(array == NULL || !getSize(array)) return ;
+	myRandomizedQuicksort(array->val, start, end, len);
+}
 
 char *getByIndex(Array *array, int index, int len) {
 	if(array == NULL) return NULL;
@@ -145,6 +257,22 @@ void iterateQueue(Queue *queue) {
 		p = p->next;
 	}
 	printf("\n");
+}
+
+//遍历队列
+bool TraverseQueue(Queue *queue, char *ele) {
+	if(queue == NULL || ele == NULL) return false;
+	bool result = false;
+	Element *p = queue->top;
+	while(p != NULL) {
+		char *val = p->val;
+		if(*val == *ele) {
+			result = true;
+			break;
+		}
+		p = p->next;
+	}
+	return result;
 }
 
 void add(Array **array, char *val, int len) {
@@ -640,7 +768,8 @@ Array *closure(Array/**<NFANode>**/ *nodes) {
 	for(i=0;i<getSize(nodes);i++) {
 		NFANode *node = (NFANode*)getByIndex(nodes, i, sizeof(NFANode));
 		Array *a = eclosure(node);
-		addAllDist(&result, a, sizeof(NFANode));
+		if(a != NULL) 
+			addAllDist(&result, a, sizeof(NFANode));
 	}
 	return result;
 }
@@ -773,10 +902,21 @@ void printDFANode(DFANode *node) {
 
 bool compareDFANode(DFANode *dfn1, DFANode *dfn2) {
 	if(dfn1 == NULL && dfn2 == NULL) return true;
-	else if(dfn1 == NULL || dfn2 == NULL) return false;
-	HashMap *map = NULL;
+	else if(dfn1 == NULL || dfn2 == NULL || getSize(dfn1->states) != getSize(dfn2->states)) return false;
 	int i;
-	for(i=0;i<getSize(dfn1-><F10>))
+	//用快速排序对两个dfnnode进行排序， 然后比较
+	myRandomizedQuicksortArray(dfn1->states, 0, getSize(dfn1->states), sizeof(NFANode));
+	myRandomizedQuicksortArray(dfn2->states, 0, getSize(dfn2->states), sizeof(NFANode));
+	for(i=0;i<getSize(dfn1->states);i++) {
+		NFANode *nfn1 = (NFANode*)getByIndex(dfn1->states, i, sizeof(NFANode));
+		NFANode *nfn2 = (NFANode*)getByIndex(dfn2->states, i, sizeof(NFANode));
+		if(nfn1 != nfn2) break;
+	}
+	if(i != getSize(dfn1->states)) {
+		return false;
+	} else{
+		return true;
+	}
 }
 
 DFA *nfa2DFA(NFA *nfa) {
@@ -796,9 +936,6 @@ DFA *nfa2DFA(NFA *nfa) {
 	DFANode *dfaNode = initDFANode(state0, NULL);
 	DFA *dfa = (DFA*)calloc(1, sizeof(DFA));
 	//dfa的初始状态
-//	DFANode *dfaNode = (DFANode*) calloc(1, sizeof(DFANode));
-//	dfaNode->states = state0;
-//	updateDFANodeState(dfaNode);
 	printDFANode(dfaNode);
 //	return NULL;
 	dfa->start = dfaNode;
@@ -814,47 +951,27 @@ DFA *nfa2DFA(NFA *nfa) {
 	int origValue = 1;
 	while(t != NULL) {
 		DFANode *node = (DFANode*)(t->val);
-		Array/**<NFANode>**/ *midStateArray = node->states;
+		Array/**<NFANode>**/ *tempStates = node->states;
 		int i;
-		for(i=0;i<getSize(midStateArray);i++) {
-			NFANode *nfaNode = (NFANode*)getByIndex(midStateArray, i, sizeof(NFANode));
-			int j;
+		for(i=0;i<getSize(tempStates);i++) {
 			HashMap *map = NULL;
-//			printf("size of alphabet is %d\n", getSize(alphabet));
-			for(j=0;j<getSize(alphabet);j++) {
-				char *c = getByIndex(alphabet, j, sizeof(char));
-				Array/**<NFANode>**/* nextNFAState = delta(nfaNode, *c) ;
-				printf("char =%c\n", *c);	
-				printf("1 size of nextNFAState is: %d\n", getSize(nextNFAState));
-				if(nextNFAState != NULL && getSize(nextNFAState)) {
-					nextNFAState = closure(nextNFAState);
-					printf("2 size of nextNFAState is: %d\n", getSize(nextNFAState));
-					int *v = (int*)get(map, *c);
-					if(v==NULL) {
-						DFAEdge *edge = initDFAEdge(*c);
-						add(&nextDFAEdge, edge, sizeof(DFAEdge));	
-						add(&nextDFANode, nextNFAState, sizeof(Array));
-						put(&map, *c, &origValue, sizeof(int));
-					} else {
-						int k;
-						for(k=0;k<getSize(nextDFAEdge);k++) {
-							//char *cc = getByIndex(nextDFAEdge, k, sizeof(char));
-							DFAEdge *edge = (DFAEdge*)getByIndex(nextDFAEdge, k, sizeof(DFAEdge));
-							if(edge->value == *c) {
-								Array/**<NFANode>**/ *a = (Array*)getByIndex(nextDFANode, k, sizeof(Array));
-								addAllDist(&a, nextNFAState, sizeof(NFANode));
-								break;
-							}
-						}
+			NFANode *tempNode = (NFANode*)getByIndex(tempStates, i, sizeof(NFANode));
+			Array *tempEdges = tempNode->edge;
+			int j;
+			for(j=0;j<getSize(tempEdges);j++) {
+				char *c = getByIndex(tempEdges, j, sizeof(char));
+				if(*c<97 || *c>122) continue;
+				//计算由nfa节点出发经过*c（包括经过epsilon边）能到达的nfa节点
+				Array/**<NFANode>**/ *ca = closure(delta(tempNode,  *c));
+				if(ca != NULL) {
+					//检查从一个nfa节点出发是否已经有相同的不是epsilon边的字母， 如果有， 就把能到达的nfa节点封装在一起
+					Array *a = (Array*)get(map, *c);
+					if(a == NULL) {
+						//检查该dna节点是否已经添加过入队列，如果有，就不重复添加，直接把新的dna节点指向该重复的dna节点（检查重复的标准是该dna节点所包含的所有nfa节点是否完全相同，即所有nfa节点的地址是否相同）
+						
+						put(&map, *c, ca, sizeof(Array));
+
 					}
-					DFANode *dfn = (DFANode*)calloc(1, sizeof(DFANode));
-					dfn->states = nextNFAState;
-					dfn->edges = nextDFAEdge;
-					updateDFANodeState(dfn);
-					if(dfn->state == 1) {
-						add(&ends, dfn, sizeof(DFANode));
-					}	
-					push(&queue, dfn);
 				}
 			}
 		}
@@ -913,7 +1030,12 @@ void test() {
 //	iterateDFA(dfa);
 }
 
+typedef struct {
+	int *val;
+} Integer;
+
 void testQueue() {
+		/**
 	int a[] = {9,8,7,6,5,4,3,2,1};
 	int b[]	= {2,4,6,8,10};
 	Array *arrayA = NULL;
@@ -950,6 +1072,20 @@ void testQueue() {
 		pop(&queue);
 		t = top(queue);
 	}
+	**/
+
+	Integer *i_1 = (Integer*)malloc(sizeof(Integer));
+	Integer *i_2 = (Integer*)malloc(sizeof(Integer));
+	i_1->val = 1;
+	i_2->val = 2;
+	Queue *queue = NULL;
+//	push(&queue, i_1);
+	push(&queue, i_2);
+
+	bool b = TraverseQueue(queue, i_1) ;
+	printf("%c\n", b);
+	b = TraverseQueue(queue, i_2) ;
+	printf("%c\n", b);
 }
 
 void testArray() {
@@ -986,9 +1122,10 @@ void testArray() {
 }
 
 int main(void) {
-	test();
+//	test();
 //	testMap();
 //	testArray();
-//	testQueue();
+	testQueue();
+	
 }
 
