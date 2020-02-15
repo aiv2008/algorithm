@@ -366,6 +366,11 @@ int getSize(Array *array) {
 	return array->size;
 }
 
+void sortAsc(Array *array, int len) {
+	if(array == NULL) return;
+	myRandomizedQuicksort(array->val, 0, getSize(array)-1, len);
+}
+
 int hashCode(int key) {
 	return key % MAP_SIZE;
 }
@@ -718,6 +723,7 @@ Array *delta(NFANode *node, char value) {
 			}	
 		}
 	}
+	sortAsc(dfaStates, sizeof(NFANode));
 	return dfaStates;
 }
 
@@ -758,6 +764,7 @@ Array *eclosure(NFANode *node) {
 		pop(&queue);
 		t = top(queue);
 	}
+//	sortAsc(dfaStates, sizeof(NFANode));
 	return dfaStates;
 }
 
@@ -771,6 +778,7 @@ Array *closure(Array/**<NFANode>**/ *nodes) {
 		if(a != NULL) 
 			addAllDist(&result, a, sizeof(NFANode));
 	}
+	sortAsc(result, sizeof(NFANode));
 	return result;
 }
 
@@ -965,13 +973,7 @@ DFA *nfa2DFA(NFA *nfa) {
 				Array/**<NFANode>**/ *ca = closure(delta(tempNode,  *c));
 				if(ca != NULL) {
 					//检查从一个nfa节点出发是否已经有相同的不是epsilon边的字母， 如果有， 就把能到达的nfa节点封装在一起
-					Array *a = (Array*)get(map, *c);
-					if(a == NULL) {
-						//检查该dna节点是否已经添加过入队列，如果有，就不重复添加，直接把新的dna节点指向该重复的dna节点（检查重复的标准是该dna节点所包含的所有nfa节点是否完全相同，即所有nfa节点的地址是否相同）
-						
-						put(&map, *c, ca, sizeof(Array));
-
-					}
+					
 				}
 			}
 		}
@@ -1125,7 +1127,11 @@ int main(void) {
 //	test();
 //	testMap();
 //	testArray();
-	testQueue();
-	
+//	testQueue();
+	Array *array = NULL;
+	int i=1;
+	add(&array,&i, sizeof(int));
+	printf("%d,%d,%p,%p, %d, %d, %p, %p\n", array, *array, array, *array, array->val, *array->val, array->val, *array->val);
+	return 0;
 }
 
