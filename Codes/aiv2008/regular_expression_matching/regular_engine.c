@@ -1046,25 +1046,31 @@ void iterateDFA(DFA *dfa) {
 	Queue *queue = NULL;
 	push(&queue, dfa->start);
 	Element *t = top(queue);
-	while(t != NULL) {
-		DFANode *node = (DFANode*)(t->val);
-		Array *states = node->states;
-		Array *edges = node->edges;
+	while(t != NULL) {	
 		int i;
+		DFANode *node = (DFANode*)(t->val);
+		Array/**<DFANode>**/ *states = node->states;
+		printf("---begin print dfa start node---\n");
+		for(i=0;i<getSize(states);i++) {
+			NFANode *nfaNode = (NFANode*)getByIndex(states, i, sizeof(NFANode));
+			printf("%d,", nfaNode->stateNum);
+		}
+		printf("\n");
+		printf("---end print dfa start node---\n");
+		Array/**<DFAEdge>**/ *edges = node->edges;
+		
 		for(i=0;i<getSize(edges);i++) {
 			DFAEdge *edge = (DFAEdge*)getByIndex(edges, i, sizeof(DFAEdge));
-			Array *state = (Array*)getByIndex(states, i, sizeof(Array));
 			printf("edge=%c,", edge->value);
-			int j;
-			printf("state={");
-			for(j=0;j<getSize(state);j++) {
-				NFANode *n = (NFANode*)getByIndex(state, j, sizeof(NFANode));
-				printf("%d,", n->state);
+			DFANode *dfaNode = edge->node;			
+			printf("---begin print dfa end node---\n");
+			for(i=0;i<getSize(dfaNode->states);i++) {
+				NFANode *nfaNode = (NFANode*)getByIndex(dfaNode->states, i, sizeof(NFANode));
+				printf("%d,", nfaNode->stateNum);
 			}
-			printf("}\n");
-			if(edge->node != NULL) {
-				push(&queue, edge->node);
-			}
+			printf("\n");
+			printf("---end print dfa end node---\n");
+			push(&queue, edge->node);
 		}
 		pop(&queue);
 		t = top(queue);
@@ -1082,7 +1088,7 @@ void test() {
 	iterateNFA(nfa);
 //	printf("size of alphabet is %d\n", getSize(nfa->alphabet));
 	DFA *dfa = nfa2DFA(nfa);
-//	iterateDFA(dfa);
+	iterateDFA(dfa);
 }
 
 typedef struct {
