@@ -96,7 +96,7 @@ void swap(int *a, int *b/**, int len**/) {
 }
 
 char *getByIndex(Array *array, int index/**, int len**/) {
-	if(array == NULL) return NULL;
+	if(!getSize(array)) return NULL;
 	if(index >= array->size) {
 		printf("index is out of bound!\n");
 		return -1;
@@ -299,18 +299,24 @@ void add(Array **array, char *val/**, int len**/) {
 		//char *a = (char*)calloc(ARRAY_SIZE, len);
 		char **a = (char**)calloc(ARRAY_SIZE, sizeof(char*));
 		(*array)->val = a;
-		*a = NULL;		
+		//*a = NULL;		
 	} 
 	if((*array)->size + 1 > (*array)->capacity) {
 		(*array)->capacity = (*array)->capacity + ((*array)->capacity) / 2;
 		//char *a = (char*)calloc((*array)->capacity, len);
 		char **a = (char**)calloc((*array)->capacity, sizeof(char*));
-		memcpy(a, (*array)->val, sizeof(char*)*(*array)->size);
+		//memcpy(a, (*array)->val, sizeof(char*)*(*array)->size);
+		//memcpy(a, (*array)->val, (*array)->size);
+		int i;
+		for(i=0;i<(*array)->size;i++) {
+			*(a+i) = *((*array)->val+i);
+			printf("i=%d,val=%d,",i, *(*(a+i)));
+		}
 		//int size = (*array)->size;
 		//(*array)->val = NULL;
 		free((*array)->val);
 		(*array)->val = a;
-		*a = NULL;
+		//*a = NULL;
 	}
 	//char *value = (*array)->val;
 	int size = (*array)->size;
@@ -372,7 +378,7 @@ void addAll(Array **dest, Array *src/**, int len**/) {
 //把src所有元素添加到dest（去重复）
 void addAllDist(Array **dest, Array *src/**, int len**/) {
 	//先遍历两个数组， 以后优化为w二分法
-	if(dest == NULL || src == NULL) return;
+	if(dest == NULL || !getSize(src) == NULL) return;
 //	if(*dest == NULL) {
 		int i;
 		for(i=0;i<getSize(src);i++) {
@@ -830,13 +836,26 @@ Array *closure(Array/**<NFANode>**/ *nodes) {
 	if(nodes == NULL) return NULL;
 	int i;
 	Array *result = NULL;
+	//Array *dataAry = NULL;
+	HashMap *map = NULL;
+	int origVal = 1;
 	for(i=0;i<getSize(nodes);i++) {
 		//NFANode *node = (NFANode*)getByIndex(nodes, i, sizeof(NFANode));
 		NFANode *node = (NFANode*)getByIndex(nodes, i);
-		Array *a = eclosure(node);
-		if(a != NULL) 
+		Array/**<NFANode>**/ *a = eclosure(node);
+		int j;
+		for(j=0;j<getSize(a);j++) {
+			NFANode *eNode = (NFANode*)getByIndex(a, j);
+			int *val = (int*)get(map, eNode->stateNum);
+			if(val == NULL) {
+				add(&result, eNode);
+				put(&map, eNode->stateNum, &origVal, sizeof(int));
+			}
+		}
+		//if(a != NULL) { 
 			//addAllDist(&result, a, sizeof(NFANode));
-			addAllDist(&result, a);
+			//addAllDist(&result, a);
+		//}
 	}
 	return result;
 }
@@ -1008,6 +1027,15 @@ bool compare2SortedArray(Array *a, Array *b/**, int len**/){
 	else return true;
 }
 
+void printArray(Array *array){
+	int i;
+	for(i=0;i<getSize(array);i++) {
+		int *value = (int*)getByIndex(array, i);
+		printf("%d,", *value);
+	}
+	printf("\n");
+}
+
 DFA *nfa2DFA(NFA *nfa) {
 	if(nfa == NULL) {
 		printf("nfa to dfa failed: nfa is null\n");
@@ -1060,7 +1088,7 @@ DFA *nfa2DFA(NFA *nfa) {
 				if(getSize(ca)) {
 					//检查从一个nfa节点出发是否已经有相同的不是epsilon边的字母， 如果有， 就把能到达的nfa节点封装在一起
 					//先把状态用快速排序算法进行排序, 然后进行比较来去重复
-					int k = 0;
+					int k;
 /**
 					sortAsc(ca, sizeof(NFANode));
 					for(;k<getSize(newDFAStateAry);k++) {
@@ -1072,7 +1100,7 @@ DFA *nfa2DFA(NFA *nfa) {
 							break;
 					}
 **/
-					for(;k<getSize(newDFAStateAry);k++) {
+					for(k=0;k<getSize(newDFAStateAry);k++) {
 						Array *ary = (Array*)getByIndex(newDFAStateAry, k);
 						/**
 						bool b = compare2SortedArray(ca, ary, sizeof(NFANode));
@@ -1099,7 +1127,7 @@ DFA *nfa2DFA(NFA *nfa) {
 						myRandomizedQuicksort(a, 0, getSize(ary)-1, sizeof(int));
 						myRandomizedQuicksort(b, 0, getSize(ca)-1, sizeof(int));
 						for(l=0;l<getSize(ary);l++) {
-							if(a[l] != b[i]) break;
+							if(a[l] != b[l]) break;
 						}
 						if(l == getSize(ary)) {//找到已存在的dfa状态
 							break;
@@ -1234,8 +1262,8 @@ void testFA() {
 }
 
 void test() {
-	char *p = "c*a*b";
-	char *s = "aab";
+	char *p = "mis*is*ip*.";
+	char *s = "mississippi";
 	printf("result=%c\n", isMatch(p, s));
 }
 
@@ -1282,14 +1310,14 @@ void testQueue() {
 }
 
 void testArray() {
-	int a[] = {9,8,7,6,5,4,3,2,1};
+	int a[] = {9,8,7,6,5,4,3,2,1,4,5,6,7};
 	Array *array = NULL;
 	int size = sizeof(a)/sizeof(a[0]);
 	int i;
 	for(i=0;i<size;i++) {
 		add(&array, &a[i]);
 	}	
-	sortAsc(array, sizeof(int));
+	//sortAsc(array, sizeof(int));
 	for(i=0;i<getSize(array);i++) {
 		int *val = (int *)getByIndex(array, i);
 		printf("%d,", *val);
