@@ -10,20 +10,14 @@
 #define MAP_SIZE 13
 
 typedef struct {
-	//状态转移边，在thompson算法中， 每个节点最多只有两条转移边
-//	struct NFANode *nextEdge1;
-//	struct NFANode *nextEdge2;
-//	struct NFAEdge *edge1;
-//	struct NFAEdge *edge2;
+	//用数字区分不同的状态
 	int stateNum;
 	struct Array/**<NFAEdge>**/ *edge;
-//	char value;
 	//是否为接受状态 1 是 0 否
 	int state;
 } NFANode;
 
 typedef struct {
-//	NFANode *in;
 	struct NFANode *node;
 	char value;
 } NFAEdge;
@@ -32,11 +26,10 @@ typedef struct {
 	struct NFANode *start;
 	//注: end节点不能有任何指向其他节点的边
 	struct NFANode *end;
-	//记录一下字母表
-	//struct Array *alphabet;
 } NFA;
 
 typedef struct {
+	//用数字区分不同的状态
 	int stateNum;
 	struct Array/**<NFANode>**/ *states;
 	struct Array/**<DFAEdge>**/ *edges;
@@ -275,22 +268,6 @@ void iterateQueue(Queue *queue) {
 	printf("\n");
 }
 
-//遍历队列
-bool TraverseQueue(Queue *queue, char *ele) {
-	if(queue == NULL || ele == NULL) return false;
-	bool result = false;
-	Element *p = queue->top;
-	while(p != NULL) {
-		char *val = p->val;
-		if(*val == *ele) {
-			result = true;
-			break;
-		}
-		p = p->next;
-	}
-	return result;
-}
-
 void add(Array **array, char *val/**, int len**/) {
 	if(array == NULL) return ;
 	if(*array == NULL) {
@@ -310,7 +287,7 @@ void add(Array **array, char *val/**, int len**/) {
 		int i;
 		for(i=0;i<(*array)->size;i++) {
 			*(a+i) = *((*array)->val+i);
-			printf("i=%d,val=%d,",i, *(*(a+i)));
+			//printf("i=%d,val=%d,",i, *(*(a+i)));
 		}
 		//int size = (*array)->size;
 		//(*array)->val = NULL;
@@ -318,48 +295,10 @@ void add(Array **array, char *val/**, int len**/) {
 		(*array)->val = a;
 		//*a = NULL;
 	}
-	//char *value = (*array)->val;
 	int size = (*array)->size;
-	//memcpy(value+len*size, val, len);
-	//*((*array)->val+sizeof(char*)*size) = malloc(len);
-	//memcpy(*((*array)->val+sizeof(char*)*size), val, len);
-	//*((*array)->val+size*sizeof(char*)) = val;
 	*((*array)->val+size) = val;
-	//printf("insert val = %d\n", *(*((*array)->val+size)));
 	(*array)->size = size + 1;
 }
-
-//add the element in the position of index
-/**
-void addByIndex(Array **array, char *val, int len, int index) {
-	if(array == NULL) return ;
-	if(*array == NULL) {
-		*array = (Array*)calloc(1, sizeof(Array));
-		(*array)->capacity = ARRAY_SIZE;
-		char *a = (char*)calloc(ARRAY_SIZE, len);
-		(*array)->val = a;
-		a = NULL;		
-	}
-	if(index >= (*array)->size) return; 
-	if((*array)->size + 1 > (*array)->capacity) {
-		(*array)->capacity = (*array)->capacity + ((*array)->capacity) / 2;
-		char *a = (char*)calloc((*array)->capacity, len);
-		memcpy(a, (*array)->val, len*(*array)->size);
-		int size = (*array)->size;
-		(*array)->val = NULL;
-		(*array)->val = a;
-		a = NULL;
-	}
-	char *value = (*array)->val;
-	int size = (*array)->size;
-	int i;
-	for(i=size-1;i>=index;i--) {
-		memcpy(value+len*(i+1), value+len*i, len);
-	}
-	memcpy(value+len*index, val, len);
-	(*array)->size = size + 1;
-}
-**/
 
 //把src所有元素添加到dest
 void addAll(Array **dest, Array *src/**, int len**/) {
@@ -403,9 +342,25 @@ int getSize(Array *array) {
 	return array->size;
 }
 
+/**
 void sortAsc(Array *array, int len) {
 	if(array == NULL) return;
 	myRandomizedQuicksort(array, 0, getSize(array)-1, len);
+}
+**/
+
+int *sortNFANode(Array/**<NFANode>**/ *array) {
+	if(!getSize(array)) return;
+	//int *result = (int*)malloc(sizeof(int));
+	int result[getSize(array)];
+	int i;
+	for(i=0;i<getSize(array);i++) {
+		NFANode *node = (NFANode*)getByIndex(array, i);
+		//*(result+i) = node->stateNum;
+		result[i] = node->stateNum;
+	}
+	myRandomizedQuicksort(result, 0, getSize(array)-1, sizeof(int));
+	return result;
 }
 
 int hashCode(int key) {
@@ -482,44 +437,6 @@ char *get(HashMap *map, int key) {
 	return result;
 }
 
-/**
-void testMap(){
-	HashMap *map = NULL;
-	int a[] = {1,2,3,4,55,6};
-	int b[] = {4,5,6,7,8,9,9};
-	int c[] = {1,2,3,4,55,6};
-	Array *arrayA = NULL;
-	Array *arrayB = NULL;
-	Array *arrayC = NULL;
-	int i;
-	for(i=0;i<sizeof(a)/sizeof(a[0]);i++) {
-		add(&arrayA, &a[i], sizeof(int));
-	}
-	for(i=0;i<sizeof(b)/sizeof(b[0]);i++) {
-		add(&arrayB, &b[i], sizeof(int));
-	}
-	for(i=0;i<sizeof(c)/sizeof(c[0]);i++) {
-		add(&arrayC, &c[i], sizeof(int));
-	}
-	int origValue = 1;
-	put(&map, arrayA, &origValue, sizeof(int));
-	put(&map, arrayB, &origValue, sizeof(int));
-	put(&map, arrayC, &origValue, sizeof(int));
-
-	int *valueA = (int*)get(map, arrayA);
-	if(valueA == NULL) {
-		put(&map, arrayA, &origValue, sizeof(int));
-	} else {
-		int v = *valueA + 1;
-		put(&map, arrayA, &v, sizeof(int));
-	}
-	int *valueB = (int*)get(map, arrayB);
-	int *valueC = (int*)get(map, arrayC);
-	valueA = (int*)get(map, arrayA);
-	printf("a=%d, b=%d, c=%d\n", *valueA, *valueB, *valueC);
-}
-**/
-
 NFANode *initNFANode(Array/**<NFAEdge>**/ *edgeAry, /**NFAEdge *edge1, NFAEdge *edge2,**/ int state, int *stateNum) {
 	if(state != 0x00 && state != 0x01) {
 		printf("init nfa node failed: state must be 1 or 0\n");
@@ -530,8 +447,6 @@ NFANode *initNFANode(Array/**<NFAEdge>**/ *edgeAry, /**NFAEdge *edge1, NFAEdge *
 		printf("init nfa node failed\n");
 		return NULL;
 	}
-//	if(edge1 != NULL) node->edge1 = edge1;
-//	if(edge2 != NULL) node->edge2 = edge2;
 	node->edge = edgeAry;
 	node->state = state;
 	node->stateNum = *stateNum;
@@ -714,7 +629,6 @@ NFA *unonAllNFA(int *stateNum) {
 }
 
 NFA *reg2NFA(char *p) {
-//	char *p = ".*";
 	char *pMove = p;
 	NFA *nfa = NULL;
 	NFA *nfaTmp = NULL;
@@ -722,8 +636,9 @@ NFA *reg2NFA(char *p) {
 	Array *array = NULL;
 	int stateNum = 0;
 	int origValue = 1;
+	//先加入一个epsilon，以匹配空串
+	nfa = epsilonNFA(&stateNum) ;
 	//是否已包含所有字母表里的字母， 因为当模式里含有'.'时， 即包含字母表的所有字母
-	//bool isAllAlphabet = false;
 	while(*pMove != '\0') {
 		if(*(pMove+1) == '*') {
 			if(*pMove == '.') {
@@ -750,18 +665,8 @@ NFA *reg2NFA(char *p) {
 			nfa = concatNFA(nfa, nfaTmp);
 			pMove++;
 		}
-/**
-		if(isAllAlphabet == false && *p>=97 && *p<=122) {
-			int *value = (int*)get(map, *p);
-			if(value == NULL) {
-				put(&map, *p, &origValue, sizeof(int));
-				add(&array, p, sizeof(char));
-			}
-		}
-**/
 		nfaTmp = NULL;
 	}
-	//nfa->alphabet = array;
 	return nfa;
 }
 
@@ -804,9 +709,6 @@ Array *eclosure(NFANode *node) {
 	Element *t = top(queue);
 	while(t != NULL) {
 		pMove = (NFANode*)(t->val);
-//		if(pMove->state== 1) {
-//			printf("reach the final state\n");
-//		}
 		if(pMove != NULL) {
 			Array *edgeAry = pMove->edge;
 	//		printf("size of edgeAry is %d\n", getSize(edgeAry));
@@ -828,7 +730,6 @@ Array *eclosure(NFANode *node) {
 		pop(&queue);
 		t = top(queue);
 	}
-//	sortAsc(dfaStates, sizeof(NFANode));
 	return dfaStates;
 }
 
@@ -852,10 +753,6 @@ Array *closure(Array/**<NFANode>**/ *nodes) {
 				put(&map, eNode->stateNum, &origVal, sizeof(int));
 			}
 		}
-		//if(a != NULL) { 
-			//addAllDist(&result, a, sizeof(NFANode));
-			//addAllDist(&result, a);
-		//}
 	}
 	return result;
 }
@@ -1011,31 +908,6 @@ void printDFANode(DFANode *node) {
 	printf("\n");
 }
 
-//比较两个已经排序的array数组
-bool compare2SortedArray(Array *a, Array *b/**, int len**/){
-	if(!getSize(a) && !getSize(b)) return true;
-	if(getSize(a) != getSize(b)) return false;
-	int i;
-	for(i=0;i<getSize(a);i++) {
-		//char *aEntity = getByIndex(a, i, len);
-		//char *bEntity = getByIndex(b, i, len);
-		char *aEntity = getByIndex(a, i);
-		char *bEntity = getByIndex(b, i);
-		if(*aEntity != *bEntity) break;
-	}
-	if(i != getSize(a)) return false;
-	else return true;
-}
-
-void printArray(Array *array){
-	int i;
-	for(i=0;i<getSize(array);i++) {
-		int *value = (int*)getByIndex(array, i);
-		printf("%d,", *value);
-	}
-	printf("\n");
-}
-
 DFA *nfa2DFA(NFA *nfa) {
 	if(nfa == NULL) {
 		printf("nfa to dfa failed: nfa is null\n");
@@ -1060,8 +932,9 @@ DFA *nfa2DFA(NFA *nfa) {
 	Array *nextDFAEdge = NULL;
 	Array *nextDFANode = NULL;
 	//用一个数组记录已产生的dfa状态
-	Array *newDFAStateAry = NULL;
+	Array/**<Array<DFANode>>**/ *newDFAStateAry = NULL;
 	Array/**<DFANode>**/ *newDFANodeAry = NULL;
+	Array/**<int*>**/ *newNFANodeAry = NULL;
 	push(&queue, dfaNode);
 	Element *t = top(queue);
 	int origValue = 1;
@@ -1086,59 +959,49 @@ DFA *nfa2DFA(NFA *nfa) {
 				Array/**<NFANode>**/ *ca = closure(delta(tempNode,  c));
 				//printf("size of ca is %d\n", getSize(ca));
 				if(getSize(ca)) {
+					int *stateNumAry = sortNFANode(ca);
 					//检查从一个nfa节点出发是否已经有相同的不是epsilon边的字母， 如果有， 就把能到达的nfa节点封装在一起
 					//先把状态用快速排序算法进行排序, 然后进行比较来去重复
 					int k;
-/**
-					sortAsc(ca, sizeof(NFANode));
-					for(;k<getSize(newDFAStateAry);k++) {
-						//Array *ary = (Array*)getByIndex(newDFAStateAry, k, sizeof(Array));
-						Array *ary = (Array*)getByIndex(newDFAStateAry, k);
-						bool b = compare2SortedArray(ca, ary, sizeof(NFANode));
-						//printf("b=%c\n", b);
-						if(b == true) //找到已存在的dfa状态
-							break;
-					}
-**/
 					for(k=0;k<getSize(newDFAStateAry);k++) {
 						Array *ary = (Array*)getByIndex(newDFAStateAry, k);
-						/**
-						bool b = compare2SortedArray(ca, ary, sizeof(NFANode));
-						if(b == true) //找到已存在的dfa状态
-							break;
-						**/
 						//待用快速排序或红黑树排序优化
 						if(getSize(ary) != getSize(ca)) continue;
-						//Array *a = NULL;
-						//Array *b = NULL;
+						//对数组进行快速排序
+						int *exsStateNumAry = (int*)getByIndex(newNFANodeAry, k);
+						int l;
+						/**
 						int a[getSize(ary)];
 						int b[getSize(ca)];
-						int l;
+						
 						for(l=0;l<getSize(ary);l++){
 							NFANode *na = (NFANode*)getByIndex(ary, l);
 							a[l] = na->stateNum;
-							//add(&a, &na->stateNum);	
 						}
 						for(l=0;l<getSize(ca);l++) {
 							NFANode *na = (NFANode*)getByIndex(ca, l);
-							//add(&b, &na->stateNum);	
 							b[l] = na->stateNum;
 						}
 						myRandomizedQuicksort(a, 0, getSize(ary)-1, sizeof(int));
 						myRandomizedQuicksort(b, 0, getSize(ca)-1, sizeof(int));
+						
 						for(l=0;l<getSize(ary);l++) {
 							if(a[l] != b[l]) break;
+						}
+						**/
+						for(l=0;l<getSize(ary);l++) {
+							if(*(stateNumAry+l) != *(exsStateNumAry+l)) break;
 						}
 						if(l == getSize(ary)) {//找到已存在的dfa状态
 							break;
 						}
 					}	
-					//printf("key=%c\n", c);
 					DFAEdge *newDFAEdge = initDFAEdge(c);
 					DFANode *newDFANode = NULL;
 					if(k == getSize(newDFAStateAry)) {//不存在该dfa节点,新建一个到达的dfa状态和一条dfa边
 						//add(&newDFAStateAry, ca, sizeof(Array));
 						add(&newDFAStateAry, ca);
+						add(&newNFANodeAry, stateNumAry);
 						newDFANode = initDFANode(ca, stateNum++);
 						//printf("---begin print new dfa node---\n");
 						//printDFANode(newDFANode);
@@ -1179,6 +1042,7 @@ DFA *nfa2DFA(NFA *nfa) {
 	return dfa;
 }
 
+//重新写，与遍历NFA不一样， NFA没有指向自己的边（即没有死循环）， DFA有
 void iterateDFA(DFA *dfa) {
 	if(dfa == NULL) return;
 	Queue *queue = NULL;
@@ -1188,31 +1052,10 @@ void iterateDFA(DFA *dfa) {
 		int i;
 		DFANode *node = (DFANode*)(t->val);
 		printDFANode(node);
-		Array/**<DFANode>**/ *states = node->states;
-		printf("---begin print dfa start node---\n");
-		for(i=0;i<getSize(states);i++) {
-			//NFANode *nfaNode = (NFANode*)getByIndex(states, i, sizeof(NFANode));
-			NFANode *nfaNode = (NFANode*)getByIndex(states, i);
-			printf("%d,", nfaNode->stateNum);
-		}
-		printf("\n");
-		printf("---end print dfa start node---\n");
 		Array/**<DFAEdge>**/ *edges = node->edges;
 		printf("size of edges is %d\n" , getSize(edges));
 		for(i=0;i<getSize(edges);i++) {
-			//DFAEdge *edge = (DFAEdge*)getByIndex(edges, i, sizeof(DFAEdge));
 			DFAEdge *edge = (DFAEdge*)getByIndex(edges, i);
-			printf("edge=%c\n", edge->value);
-			DFANode *dfaNode = edge->node;			
-			printf("---begin print dfa end node---\n");
-			int j;
-			for(j=0;j<getSize(dfaNode->states);j++) {
-				//NFANode *nfaNode = (NFANode*)getByIndex(dfaNode->states, j, sizeof(NFANode));
-				NFANode *nfaNode = (NFANode*)getByIndex(dfaNode->states, j);
-				printf("%d,", nfaNode->stateNum);
-			}
-			printf("\n");
-			printf("---end print dfa end node---\n");
 			push(&queue, edge->node);
 		}
 		pop(&queue);
@@ -1224,21 +1067,17 @@ bool isMatch(char *p, char *s) {
 	NFA *nfa = reg2NFA(p);
 	//iterateNFA(nfa);
 	DFA *dfa = nfa2DFA(nfa);
+	//iterateDFA(dfa);
 	DFANode *node = dfa->start;
 	//printDFANode(node);
 	char *sM = s;
 	while(*sM != '\0') {
 		Array/**<DFAEdge>**/ *edges = node->edges;
 		int i;
-		//printf("sizeof edges is %d\n", getSize(edges));
 		for(i=0;i<getSize(edges);i++) {
-			//DFAEdge *edge = (DFAEdge*)getByIndex(edges, i, sizeof(DFAEdge));
 			DFAEdge *edge = (DFAEdge*)getByIndex(edges, i);
-			//printf("edge->value=%c\n", edge->value);
 			if(edge->value == *sM) {
 				node = edge->node;
-				//printDFANode(node);
-				//printf("size of edges is %d\n", getSize(node->edges));
 				break;
 			}
 		}
@@ -1262,51 +1101,9 @@ void testFA() {
 }
 
 void test() {
-	char *p = "mis*is*ip*.";
-	char *s = "mississippi";
+	char *p = "c*a*b";
+	char *s = "aab";
 	printf("result=%c\n", isMatch(p, s));
-}
-
-
-void testQueue() {
-		/**
-	int a[] = {9,8,7,6,5,4,3,2,1};
-	int b[]	= {2,4,6,8,10};
-	Array *arrayA = NULL;
-	Array *arrayB = NULL;
-	int i;
-	for(i=0;i<sizeof(a)/sizeof(a[0]);i++) {
-		add(&arrayA, &a[i], sizeof(int));
-	}
-	for(i=0;i<sizeof(b)/sizeof(b[0]);i++) {
-		add(&arrayB, &b[i], sizeof(int));
-	}
-	printf("print array a:\n");
-	for(i=0;i<getSize(arrayA);i++) {
-		int *value = (int*)getByIndex(arrayA, i, sizeof(int));
-		printf("%d,", *value);
-	}
-	printf("\nprint array b:\n");
-	for(i=0;i<getSize(arrayB);i++) {
-		int *value = (int*)getByIndex(arrayB, i, sizeof(int));
-		printf("%d,", *value);
-	}
-	printf("\n");
-	Queue *queue  = NULL;
-	push(&queue, arrayA);
-	push(&queue, arrayB);
-	Element *t = top(queue);
-	while(t != NULL) {
-		Array *tmpArray = (Array*)(t->val);
-		for(i=0;i<getSize(tmpArray);i++) {
-			int *value = (int*)getByIndex(tmpArray, i, sizeof(int));
-			printf("%d,", *value);
-		}
-		printf("\n");
-		pop(&queue);
-		t = top(queue);
-	}
-	**/
 }
 
 void testArray() {
@@ -1317,7 +1114,6 @@ void testArray() {
 	for(i=0;i<size;i++) {
 		add(&array, &a[i]);
 	}	
-	//sortAsc(array, sizeof(int));
 	for(i=0;i<getSize(array);i++) {
 		int *val = (int *)getByIndex(array, i);
 		printf("%d,", *val);
