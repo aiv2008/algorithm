@@ -371,39 +371,24 @@ int main(void)
 //    int a[] = {1};
 //    size_t size = sizeof(a)/sizeof(a[0]);
 
-	int a1 = 1, a2 = 2;
-	Integer *i1 = (Integer*)malloc(sizeof(Integer));
-	i1->val = &a1;
-	Integer *i2 = (Integer*)malloc(sizeof(Integer));
-	i2->val = &a2;
-	Integer *i3 = i1;
-	Integer *i4 = i2;
-	printf("i1.val=%d, i2.val=%d, i3.val=%d, i4.val=%d\n", *i1->val, *i2->val, *i3->val, *i4->val);
-	printf("adress is %p,%p,%p,%p, %p, %p, %p, %p\n", i1, *i1, i2, *i2, i3, *i3, i4, *i4);
-	printf("%#x,%#x,%#x,%#x, %#x, %#x, %#x, %#x\n",i1, *i1,i2, *i2, i3, *i3, i4, *i4);
-	printf("%#x, %#x", i1->val, i2->val);
-
-/**
-    for(int i=0;i<size;i++)
+	int i;
+    for(i=0;i<size;i++)
     {
         a[i] = rand()%rand_size;
     }
 
     TreeNode* root = NULL;
-    for(int i=0;i<size;i++)
+    for(i=0;i<size;i++)
         root = tree_insert(&root, a[i]);
     printf("\nroot is :%d\n",root->data);
-**/
 
 
 //    successor(root);
 //    successor_for_test(root);
 
-	/**
     int search_rand = rand()%rand_size;
     printf("\n");
     printf("search rand is :%d\n",search_rand);
-**/
 
 //    TreeNode* node = tree_search(root, search_rand);
 //    print_node(node);
