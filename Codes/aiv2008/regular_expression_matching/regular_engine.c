@@ -26,6 +26,8 @@ typedef struct {
 typedef struct {
 	struct FANode *start;
 	struct FANode *end;
+	//记录所有状态
+	struct Array /**FANode**/ *nodeAry;
 } FA;
 
 /**
@@ -347,6 +349,23 @@ void setByIndex(Array *array, char *val, int index) {
 		return;
 	}
 	*(array->val+index) = val;
+}
+
+void removeByIndex(Array *array, int index) {
+	if(array == NULL) return;
+	if(index >= getSize(array)) {
+		printf("removeByIndex: index is out of bound\n");
+		return;
+	}
+	int i;
+	for(i=index;i<getSize(array);i++) {
+		if(index == getSize(array)-1) {
+			*(array->val+i) = NULL;
+		} else {
+			*(array->val+i) = *(array->val+i+1);
+		}
+	}
+	array->size--;
 }
 
 int getSize(Array *array) {
@@ -819,7 +838,7 @@ void updateFANode(FANode *dfaNode, Array/**FANode**/ *nfaNodeAry) {
 	}
 }
 
-FANode *nfa2DFA(FA *nfa) {
+FA *nfa2DFA(FA *nfa) {
 	if(nfa == NULL) {
 		printf("nfa to dfa failed: nfa is null\n");
 		return NULL;
@@ -832,6 +851,7 @@ FANode *nfa2DFA(FA *nfa) {
 	Array/**FANode**/ *ends = NULL;
 	// 把nfaStartNode添加到数组state0里面
 	FANode *dfaNode = initFANode(NULL, 0, stateNum++);
+	FA *fa = initFA(dfaNode, NULL) ;
 	//移动的fanode指针
 	FANode *node = dfaNode;
 	Array *nextDFAEdge = NULL;
@@ -972,14 +992,16 @@ FANode *nfa2DFA(FA *nfa) {
 	} else {
 		printf("size of dfa ends array is %d\n", getSize(ends));
 	}
-	//dfa->ends = ends;
-	//return dfa;
-	return dfaNode;
+	fa->nodeAry = newDFANodeAry;
+	return fa;
+	//return dfaNode;
 }
 
 bool isMatch(char *p, char *s) {
 	FA *nfa = reg2NFA(p);
-	FANode *node = nfa2DFA(nfa);
+	//FANode *node = nfa2DFA(nfa);
+	FA *dfa = nfa2DFA(nfa);
+	FANode *node = dfa->start;
 	char *sM = s;
 	while(*sM != '\0') {
 		Array/**<FAEdge>**/ *edges = node->edge;
@@ -1042,12 +1064,39 @@ void iterateDFA(FANode *node) {
 	}
 }
 
+void minimalDFA(FA *dfa) {
+	if(dfa == NULL) return;
+	Array /**FANode(non-final state)**/ *nonFinalStatAry = NULL;
+	Array /**FANode(final state)**/ *finalStatAry = NULL;
+	Array /**FANode**/ *nodeAry = dfa->nodeAry;
+	Array /**Array<FANode>**/ *sigma = NULL;
+	Queue *queue = NULL;
+	int i;
+	for(i=0;i<getSize(nodeAry);i++) {
+		FANode *node = (FANode*)getByIndex(nodeAry, i);
+		if(node->state) add(&finalStatAry, node);
+		else add(&nonFinalStatAry, node);
+	}
+	quicksortEx(finalStatAry, 0, getSize(finalStatAry)-1);
+	quicksortEx(nonFinalStatAry, 0, getSize(nonFinalStatAry)-1);
+	add(&sigma, finalStatAry);
+	add(&sigma, nonFinalStatAry);
+	push(&queue, finalStatAry);
+	push(&queue, nonFinalStatAry);
+	Element *t = top(queue);
+	while(t != NULL) {
+		
+	}
+}
+
 void testFA() {
 	char *p = "b*.c*..*.b*b*.*c*";
 	FA *nfa = reg2NFA(p);
 	iterateNFA(nfa);
 	printf("\n");
-	FANode *node = nfa2DFA(nfa);
+	//FANode *node = nfa2DFA(nfa);
+	FA *dfa = nfa2DFA(nfa);
+	FANode *node = dfa->start;
 	iterateDFA(node);
 }
 
@@ -1071,20 +1120,29 @@ void testArray() {
 		add(&array, it);
 	}
 	printf("---before insert---\n");
-	for(i=0;i<size;i++) {
+	for(i=0;i<getSize(array);i++) {
 		Integer *it = (Integer*)getByIndex(array, i);
 		printf("%d,%d\n",*it, it->stateNum);
 	}
-	
+	printf("\n");
 	Integer *tmpIt = (Integer*)getByIndex(array, 4);
 	setByIndex(array, getByIndex(array, 5), 4);
 	setByIndex(array, tmpIt, 5);
 
 	printf("---after insert---\n");
-	for(i=0;i<size;i++) {
+	for(i=0;i<getSize(array);i++) {
 		Integer *it = (Integer*)getByIndex(array, i);
 		printf("%d,%d\n",*it, it->stateNum);
 	}
+
+	removeByIndex(array, 4);
+	printf("\n");
+	printf("---after remove---\n");
+	for(i=0;i<getSize(array);i++) {
+		Integer *it = (Integer*)getByIndex(array, i);
+		printf("%d,%d\n",*it, it->stateNum);
+	}
+	printf("\n");
 }
 
 
@@ -1154,9 +1212,9 @@ void testMerge(){
 }
 
 int main(void) {
-	test();
+//	test();
 //	testMap();
-	//testArray();
+	testArray();
 //	testQueue();
 //testQuicksort();
 
