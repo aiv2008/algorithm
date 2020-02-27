@@ -1066,26 +1066,33 @@ void iterateDFA(FANode *node) {
 
 void minimalDFA(FA *dfa) {
 	if(dfa == NULL) return;
-	Array /**FANode(non-final state)**/ *nonFinalStatAry = NULL;
-	Array /**FANode(final state)**/ *finalStatAry = NULL;
+	Array /**Array<FANode>**/ *result = NULL;
 	Array /**FANode**/ *nodeAry = dfa->nodeAry;
-	Array /**Array<FANode>**/ *sigma = NULL;
-	Queue *queue = NULL;
+	Array /**FANode**/ *finalStateAry = NULL;
+	Array /**FANode**/ *nonFinalStateAry = NULL;
 	int i;
 	for(i=0;i<getSize(nodeAry);i++) {
 		FANode *node = (FANode*)getByIndex(nodeAry, i);
-		if(node->state) add(&finalStatAry, node);
-		else add(&nonFinalStatAry, node);
+		if(node->state) {
+			add(&finalStateAry, node);			
+		} else {
+			add(&nonFinalStateAry, node);
+		}
 	}
-	quicksortEx(finalStatAry, 0, getSize(finalStatAry)-1);
-	quicksortEx(nonFinalStatAry, 0, getSize(nonFinalStatAry)-1);
-	add(&sigma, finalStatAry);
-	add(&sigma, nonFinalStatAry);
-	push(&queue, finalStatAry);
-	push(&queue, nonFinalStatAry);
-	Element *t = top(queue);
-	while(t != NULL) {
-		
+	quicksortEx(finalStateAry, 0, getSize(finalStateAr)-1);
+	quicksortEx(nonFinalStateAry, 0, getSize(nonFinalStateAry)-1);
+	add(&result, finalStateAry);
+	add(&result, nonFinalStateAry);
+
+	while(1) {
+		if(i>=getSize(result)) break;
+		Array /**FANode**/ *array = (Array*)getByIndex(result, i);
+		Array /**Array<FANode>**/ tmpArray = NULL;		
+		int j;
+		for(j=0;j<getSize(array);j++) {
+			
+		}
+		i++;
 	}
 }
 
