@@ -23,6 +23,8 @@ typedef struct {
 	char value;
 } FAEdge;
 
+
+
 typedef struct {
 	struct FANode *start;
 	struct FANode *end;
@@ -116,6 +118,19 @@ char *getByIndex(Array *array, int index/**, int len**/) {
 	return *(array->val+index);
 }
 
+void setByIndex(Array *array, char *val, int index) {
+	if(array == NULL) return;
+	if(index < 0) {
+		printf("index must larger than 0\n");
+		return;
+	}
+	if(index >= array->size) {
+		printf("setByIndex: index is out of bound\n");
+		return;
+	}
+	*(array->val+index) = val;
+}
+
 char *getLast(Array *array, int len) {
 	if(array == NULL) return NULL;
 	return *(array->val+len*(array->size-1));
@@ -162,18 +177,22 @@ void quicksort(Array *array, int p, int r) {
 
 int partitionEx(Array *array, int p, int r) {
 	//printf("r=%d\n", r);
-	//int *valR = (int*)getByIndex(array, r);
-	Integer *valR = (Integer*)getByIndex(array, r);
+	//Integer *valR = (Integer*)getByIndex(array, r);
+	int *valR = (int*)getByIndex(array, r);
 	int i = p - 1;
 	int j;
 	for(j=p;j<r;j++) {
-		Integer *valJ = (Integer*)getByIndex(array, j);
-		if(valJ->stateNum <= valR->stateNum) {
+		//Integer *valJ = (Integer*)getByIndex(array, j);
+		int *valJ = (int*)getByIndex(array, j);
+		//if(valJ->stateNum <= valR->stateNum) {
+		if(*valJ <= *valR) {
 			i++;
 			//printf("--before---\n");
-			Integer *valI = (Integer*)getByIndex(array, i);
+			//Integer *valI = (Integer*)getByIndex(array, i);
+			int *valI = (int*)getByIndex(array, i);
 			//printf("i=%d, j=%d, ival=%d, jval=%d\n",i,j, *valI, *valJ);
-			Integer *valTmp = valI;
+			//Integer *valTmp = valI;
+			int *valTmp = valI;
 			setByIndex(array, valJ, i);
 			setByIndex(array, valTmp, j);
 			valTmp = NULL;
@@ -183,8 +202,10 @@ int partitionEx(Array *array, int p, int r) {
 		}
 	}
 	//printf("%d\n", i+1);
-	Integer *valIP1 = (Integer*)getByIndex(array, i+1);
-	Integer *valTmp = valIP1;
+	//Integer *valIP1 = (Integer*)getByIndex(array, i+1);
+	int *valIP1 = (int*)getByIndex(array, i+1);
+	//Integer *valTmp = valIP1;
+	int *valTmp = valIP1;
 	setByIndex(array, valR, i+1);
 	setByIndex(array, valTmp, r);
 	valTmp = NULL;
@@ -192,8 +213,9 @@ int partitionEx(Array *array, int p, int r) {
 	/**
 	int n;
 	for(n=0;n<getSize(array);n++ ){
-		Integer *val = (Integer*)getByIndex(array, n);
-		printf("%d,", val->stateNum);
+		//Integer *val = (Integer*)getByIndex(array, n);
+		int *val = (int*)getByIndex(array, n);
+		printf("%d,", *val);
 	}
 	printf("\n");
 **/
@@ -339,18 +361,6 @@ void addByIndex(Array **array, char *val, int index) {
 	}
 }
 
-void setByIndex(Array *array, char *val, int index) {
-	if(array == NULL) return;
-	if(index < 0) {
-		printf("index must larger than 0\n");
-		return;
-	}
-	if(index >= array->size) {
-		printf("setByIndex: index is out of bound\n");
-		return;
-	}
-	*(array->val+index) = val;
-}
 
 int indexOf(Array *array, char *val) {
 	if(array == NULL || val == NULL) return -1;
@@ -866,7 +876,18 @@ void updateFANode(FANode *dfaNode, Array/**FANode**/ *nfaNodeAry) {
 		}
 	}
 }
-
+/**
+DFA *initDFA(FANode *start, FANode *end) {
+	DFA *fa = (DFA*)malloc(sizeof(DFA));
+	if(fa == NULL) {
+		printf("initDFA failed: malloc fa error\n");
+		return NULL;
+	}
+	fa->start = start;
+	fa->end = end;
+	return fa;
+}
+**/
 FA *nfa2DFA(FA *nfa) {
 	if(nfa == NULL) {
 		printf("nfa to dfa failed: nfa is null\n");
@@ -881,6 +902,7 @@ FA *nfa2DFA(FA *nfa) {
 	// 把nfaStartNode添加到数组state0里面
 	FANode *dfaNode = initFANode(NULL, 0, stateNum++);
 	FA *fa = initFA(dfaNode, NULL) ;
+	//DFA *fa = initDFA(dfaNode, NULL);
 	//移动的fanode指针
 	FANode *node = dfaNode;
 	Array *nextDFAEdge = NULL;
@@ -893,7 +915,9 @@ FA *nfa2DFA(FA *nfa) {
 	add(&newDFAStateAry, state0);
 	int n = 0;
 	int size = getSize(newDFAStateAry);
-	Array /**char**/ *alphabetAry = NULL;
+	Array /**char**/ *alphabetCharAry = NULL;
+	int orgiVal = 1;
+	HashMap *letterMap = NULL;
 	while(1) {
 		printf("size=%d\n", size);
 		if(n >= size ) break;
@@ -921,8 +945,20 @@ FA *nfa2DFA(FA *nfa) {
 				FAEdge *e = (FAEdge*)getByIndex(tempEdges, j );
 				char c = e->value;
 				if(c<97 || c>122) continue;
-				printf("key=%c\n", c);
-				add(&alphabetAry, &c);
+				printf("key=%p,%c\n",&c, c);
+				int *cVal = (int*)get(letterMap, c);
+				if(cVal == NULL) {
+					printf("key2=%p,%c\n",&c, c);
+					put(&letterMap, c, &orgiVal );
+					int r=0;
+					for(r=0;r<getSize(alphabetCharAry);r++) {
+						char *cc = getByIndex(alphabetCharAry, r);
+						printf("cc=%c\n", *cc);
+					}
+					char *pc = malloc(sizeof(char));
+					memcpy(pc, &c, sizeof(char));
+					add(&alphabetCharAry, pc);
+				}
 				//计算由nfa节点出发经过*c（包括经过epsilon边）能到达的nfa节点
 				Array *origNodes = delta(tempNode,  c);
 				Array/**<FANode>**/ *ca = closure(origNodes);
@@ -1018,15 +1054,13 @@ FA *nfa2DFA(FA *nfa) {
 		//t = top(queue);
 		//t = t->next;
 	}
-	quicksort(alphabetAry, 0, getSize(alphabetAry)-1);
-	int i=0;
-	while(i<getSize(alphabetAry)) {
-		if(i==0) continue;
-		char *preChar = getByIndex(alphabetAry, i-1);
-		char *theChar = getByIndex(alphabetAry, i);
-		if(*preChar == *theChar) removeByIndex(alphabetAry, i);
-		else i++;
-	}	
+	int i;
+	for(i=0;i<getSize(alphabetCharAry);i++) {
+		char *cVal = getByIndex(alphabetCharAry, i);
+		printf("%c,", *cVal);
+	}
+	printf("\n");
+	fa->alphabetAry = alphabetCharAry;	
 	if(ends == NULL){
 		printf("nfa to dfa failed: no end state in DFA\n");
 	} else {
@@ -1040,6 +1074,7 @@ FA *nfa2DFA(FA *nfa) {
 bool isMatch(char *p, char *s) {
 	FA *nfa = reg2NFA(p);
 	//FANode *node = nfa2DFA(nfa);
+	//FA *dfa = nfa2DFA(nfa);
 	FA *dfa = nfa2DFA(nfa);
 	FANode *node = dfa->start;
 	char *sM = s;
@@ -1141,40 +1176,6 @@ void minimalDFA(FA *dfa) {
 	add(&result, finalStateAry);
 	add(&result, nonFinalStateAry);
 
-	while(1) {
-		if(i>=getSize(result)) break;
-		Array /**FANode**/ *array = (Array*)getByIndex(result, i);
-		if(getSize(array) > 1) {
-			int j;
-			Array /**char**/ *alphabetAry = NULL;
-			for(j=0;j<getSize(array);j++) {
-				FANode *src = (FANode*)getByIndex(array, i);
-				if(!getSize(alphabetAry )) {
-					FAEdge *edge = src->edge;
-					add(&alphabetAry, &edge->value );
-				}			
-				int k;
-				HashMap *map = NULL;
-				HashMap *mapMerge = NULL;
-				for(k=0;k<getSize(alphabetAry);k++) {
-					char *c = getByIndex(alphabetAry, k);
-					FANode *dest = move(src, *c);
-					Array /**Array<FANode>**/ *tmpArray = NULL;		
-					
-					int l;
-					for(l=0;l<getSize(result);l++) {
-						Array *a = (Array*)getByIndex(result, l);
-						if(indexOf(a, dest) > -1) {
-							add(&tmpArray, a);
-							break; 
-						}
-					}	
-										
-				}
-			}
-		}
-		i++;
-	}
 }
 
 void testFA() {
@@ -1184,8 +1185,17 @@ void testFA() {
 	printf("\n");
 	//FANode *node = nfa2DFA(nfa);
 	FA *dfa = nfa2DFA(nfa);
-	FANode *node = dfa->start;
-	iterateDFA(node);
+	//DFA *dfa = nfa2DFA(nfa);
+	Array *alphabetAry = dfa->alphabetAry;
+	int i;
+	for(i=0;i<getSize(alphabetAry);i++) {
+		char *c = getByIndex(alphabetAry, i);
+		printf("%c,", *c);
+	}
+	printf("\n");
+	//FANode *node = dfa->start;
+	//iterateDFA(node);
+	
 }
 
 void test() {
@@ -1224,19 +1234,23 @@ void testArray() {
 
 
 void testQuicksort() {
-	int a[] = {57,56};
+	int a[] = {2,3,5,4,678,43,45678,21,1,3,4,57,56};
 	int size = sizeof(a)/sizeof(a[0]);
 	Array *array = NULL;
 	int i;
 	for(i=0;i<size;i++) {
-		FANode *it = (FANode*) malloc(sizeof(FANode));
-		it->stateNum = a[i];
-		add(&array, it);
+		//FANode *it = (FANode*) malloc(sizeof(FANode));
+		//it->stateNum = a[i];
+		//add(&array, it);
+		add(&array, &a[i]);
 	}
 	quicksortEx(array, 0, getSize(array)-1);
-	for(i=0;i<size;i++) {
-		FANode *it = (FANode*)getByIndex(array, i);
-		printf("%d,", it->stateNum);
+	//quicksort(array, 0, getSize(array)-1);
+	for(i=0;i<getSize(array);i++) {
+	//	FANode *it = (FANode*)getByIndex(array, i);
+	//	printf("%d,", it->stateNum);
+		int *val = (int*)getByIndex(array, i);
+		printf("%d,", *val);
 	}
 	printf("\n");
 }
@@ -1293,11 +1307,10 @@ int main(void) {
 //	testArray();
 //	testQueue();
 //testQuicksort();
-
-//testFA();
+testFA();
 
 //testMerge();
-testArray();
+//testArray();
 	return 0;
 }
 
