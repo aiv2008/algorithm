@@ -1156,12 +1156,64 @@ FANode *move(FANode *node, char c) {
 	return result;
 }
 
+//返回该节点属于的集合，如果返回是空， 则报错， 因为不可能没有集合包含该节点（set必须先排序）
+Array /**FANode**/ *moveToSet(FANode *node, Array /**Array**/*set) {
+	if(node == NULL || set == NULL ) {
+		printf("move to set error: node or set is null\n");
+		return NULL;
+	}
+	Array /**FANode**/ *result = NULL;
+	int i;
+	for(i=0;i<getSize(set);i++) {
+		Array /**FANode**/ *array = (Array*)getByIndex(set, i);
+		int j;
+		for(j=0;j<getSize(array);j++) {
+			FANode *nd = (FANode*)getByIndex(array, j);
+			if(nd->stateNum == node->stateNum) break;
+			else if(nd->stateNum > node->stateNum) {
+				j = getSize(array);
+				break;
+			}
+		}
+		if(j == getSize(array)) {//找到了包含该节点的集合
+			result = array;
+			break;
+		}
+	}
+	if(result == NULL){
+		printf("move to set error: node not included in any set\n");
+	}
+	return result;
+}
+
+//compare two sorted array
+bool compareTo(Array *a, Array *b) {
+	if(a == NULL && b == NULL) return true;
+	else if(getSize(a) != getSize(b)) return false;
+	else {
+		int i=0;
+		while(i < getSize(a)) {
+			int *aI = (int*)getByIndex(a, i);
+			int *bI = (int*)getByIndex(b, i);
+			if(*aI != *bI) break;
+			i++;	
+		}
+		if(i != getSize(a))return false;
+		else return true;
+	}
+}
+
 void minimalDFA(FA *dfa) {
 	if(dfa == NULL) return;
 	Array /**Array<FANode>**/ *result = NULL;
 	Array /**FANode**/ *nodeAry = dfa->nodeAry;
 	Array /**FANode**/ *finalStateAry = NULL;
 	Array /**FANode**/ *nonFinalStateAry = NULL;
+	Array *alphabetAry = dfa->alphabetAry;
+	if(alphabetAry == NULL) {
+		printf("minimal dfa error: alphabet is null\n");
+		return;
+	}
 	int i;
 	for(i=0;i<getSize(nodeAry);i++) {
 		FANode *node = (FANode*)getByIndex(nodeAry, i);
@@ -1176,16 +1228,82 @@ void minimalDFA(FA *dfa) {
 	add(&result, finalStateAry);
 	add(&result, nonFinalStateAry);
 
+	//Queue *queue = NULL;
+	//push(&queue, finalStateAry);
+	//push(&queue, nonFinalStateAry);
+	//Element *t = top(queue);	
+	//while(t != NULL) {
+	int size = getSize(result);
+	i = 0;
+	while(1) {
+		if(i >= getSize(result)) break;
+	//for(i=0;i<getSize(result);i++) {
+		Array /**FANode**/ *array = (Array*)getByIndex(result, i);
+		//Array *array = (Array*)(t->val);
+		int j;
+		Array /**Array**/*tmpAry = NULL;
+		//group the node
+		Array /**Array<FANode>**/ *cTmpAry = NULL;
+		for(j=0;j<getSize(alphabetAry);j++) {
+			char *c = getByIndex(alphabetAry, j);
+			int k;
+			for(k=0;k<getSize(array);k++) {
+				FANode *src = (FANode*)getByIndex(array, k);
+				//FANode *dest = move(src, *c);				
+				Array /**FANode**/ *dest = moveToSet(move(src, *c), result);
+				int l;
+				Array *cTmp = NULL;
+				for(l=0;l<getSize(tmpAry);l++){
+					Array *tmp = (Array*)getByIndex(tmpAry, l);
+					cTmp = (Array*)getByIndex(cTmpAry, l);
+					if(compareTo(tmp, dest) == true) break;
+				}			
+				//add the new Array	
+				if(l == getSize(tmpAry)) { 
+					add(&tmpAry, dest);
+					Array *a = NULL;
+					add(&a, src);
+					add(&cTmpAry, a);	
+				} else {
+					add(&cTmp, src);
+					quicksortEx(cTmp, 0, getSize(cTmp)-1);
+				}
+			}
+			if(getSize(tmpAry) > 1) {
+				for(k=0;k<getSize(tmpAry);k++) {
+					Array *tmp = (Array*)getByIndex(tmpAry, k);
+					//push(&queue, tmp);
+					add(&result, tmp);
+				}
+				removeByIndex(result, i);			
+				break;
+			} else {
+				i++;
+			}
+		}
+		//pop(&queue);
+		//t = top(queue);
+		//i++;
+	}
+
+	for(i=0;i<getSize(result);i++) {
+		Array *array = (Array*)getByIndex(result, i);
+		int j;
+		for(j=0;j<getSize(array);j++) {
+			FANode *node = (FANode*)getByIndex(array, j);
+			printf("%d,", node->stateNum);
+		}
+		printf("\n");
+	}
 }
 
 void testFA() {
+	/**
 	char *p = "b*.c*..*.b*b*.*c*";
 	FA *nfa = reg2NFA(p);
 	iterateNFA(nfa);
 	printf("\n");
-	//FANode *node = nfa2DFA(nfa);
 	FA *dfa = nfa2DFA(nfa);
-	//DFA *dfa = nfa2DFA(nfa);
 	Array *alphabetAry = dfa->alphabetAry;
 	int i;
 	for(i=0;i<getSize(alphabetAry);i++) {
@@ -1193,9 +1311,62 @@ void testFA() {
 		printf("%c,", *c);
 	}
 	printf("\n");
-	//FANode *node = dfa->start;
-	//iterateDFA(node);
+	**/
+
+	//q0	
+	Array *edgeAry1 = NULL;
+	FAEdge *edge1 = initFAEdge('f'); 
+	add(&edgeAry1,edge1);
+	FANode *node0 = initFANode(edgeAry1, 0, 0);
+	//q1
+	FAEdge *edge2 = initFAEdge('e');
+	FAEdge *edge3 = initFAEdge('i');
+	Array *edgeAry2 = NULL;
+	add(&edgeAry2, edge2);
+	add(&edgeAry2, edge3);
+	FANode *node1 = initFANode(edgeAry2, 0, 1);
+	//q0->q1
+	edge1->node = node1;
+	//q2
+	FAEdge *edge4 = initFAEdge('e');
+	Array *edgeAry3 = NULL;
+	add(&edgeAry3, edge4);
+	FANode *node2 = initFANode(edgeAry3, 0, 2);
+	//q1->q2
+	edge2->node = node2;
+	//q4
+	FAEdge *edge5 = initFAEdge('e');
+	Array *edgeAry4 = NULL;
+	add(&edgeAry4, edge5);
+	FANode *node4 = initFANode(edgeAry4, 0, 4);
+	//q1->q4
+	edge3->node = node4;
+	//q3
+	FANode *node3 = initFANode(NULL, 1, 3);
+	//q2->q3
+	edge4->node = node3;
+	//q5
+	FANode *node5 = initFANode(NULL, 1, 5);
+	//q4->q5
+	edge5->node = node5;
 	
+	FA *fa = initFA(node0, NULL);
+	Array *alphabetAry = NULL;
+	add(&alphabetAry, 'e');		
+	add(&alphabetAry, 'f');		
+	add(&alphabetAry, 'i');
+	fa->alphabetAry = alphabetAry;
+
+	Array *nodeAry = NULL;
+	add(&nodeAry, node0);
+	add(&nodeAry, node1);
+	add(&nodeAry, node2);
+	add(&nodeAry, node3);
+	add(&nodeAry, node4);
+	add(&nodeAry, node5);
+
+	iterateDFA(fa->start);
+	minimalDFA(fa);		
 }
 
 void test() {
@@ -1208,26 +1379,22 @@ void test() {
 }
 
 void testArray() {
-	int a[] = {'a','b','c','d','f','a','c','b','h','a'};
+	int a[] = {};
+	int b[] = {};
 	int size = sizeof(a) / sizeof(a[0]);
 	int i;
 	Array *array = NULL;
+	Array *arrayB = NULL;
 	for(i=0;i<size;i++) {
-		add(&array, &a[i]);
+		Integer *it = (Integer*)malloc(sizeof(Integer));
+		Integer *it2 = (Integer*)malloc(sizeof(Integer));
+		it->stateNum = a[i];
+		it2->stateNum = b[i];
+		add(&array, it);
+		add(&arrayB, it2);
 	}
-	quicksort(array, 0, getSize(array)-1);
-	i=0;
-	while(i<getSize(array)) {
-		if(i==0)continue;
-		char *c1 = getByIndex(array, i-1);
-		char *c2 = getByIndex(array, i);
-		if(*c1 == *c2) removeByIndex(array, i);
-		else i++;
-	}
-	for(i=0;i<getSize(array);i++) {
-		char *c = getByIndex(array, i);
-		printf("%c,", *c);
-	}
+	bool result = compareTo(array, arrayB);
+	printf("%c", result);
 	printf("\n");
 }
 
