@@ -1300,11 +1300,29 @@ void minimalDFA(FA *dfa) {
 		for(j=0;j<getSize(alphabetAry);j++) {
 			char *c = getByIndex(alphabetAry, j);
 			int k;
-			Queue *q = NULL;
-			Element *t1 = top(q);	
+			List/**Array**/ *list = NULL;
 			for(k=0;k<getSize(array);k++) {
 				FANode *src = (FANode*)getByIndex(array, k);
 				FANode *dest = move(src, *c);
+				if(dest == NULL) {
+					Node *n = next(list);
+					while(n != NULL) {
+						Array *a = (Array*)(n->data);
+						if(a == NULL) break;
+					}
+					if(n == NULL) insert(&list, NULL);
+					reset(list);
+				} else {
+					Node *n = next(list);
+					while(n != NULL) {
+						Array *a = (Array*)(n->data);
+						int l;
+						for(l=0;l<getSize(a);l++) {
+							
+						}
+					}
+					Element *t1 = top(queue);
+				}
 			}
 		}	
 	}
