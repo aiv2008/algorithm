@@ -23,8 +23,6 @@ typedef struct {
 	char value;
 } FAEdge;
 
-
-
 typedef struct {
 	struct FANode *start;
 	struct FANode *end;
@@ -91,6 +89,17 @@ typedef struct {
 } Array;
 
 typedef struct {
+	char *data;
+	struct Node *next;
+} Node;
+
+typedef struct {
+	struct Node *head;
+	struct Node *tail;
+	struct Node *move;
+} List;
+
+typedef struct {
 	int key;
 	char *value;
 } Entity;
@@ -99,9 +108,11 @@ typedef struct {
 	struct Array/**<Entity>**/ **entity;
 } HashMap;
 
+/**
 typedef struct {
 	int stateNum;
 } Integer;
+**/
 
 void swap(int *a, int *b/**, int len**/) {
 	int temp = *a;
@@ -285,6 +296,56 @@ void iterateQueue(Queue *queue) {
 	}
 	printf("\n");
 }
+
+void insert(List **list, void *data) {
+	if(list == NULL) return ;
+	if(*list == NULL) {
+		*list = (List*)calloc(1, sizeof(List));
+	}
+	Node *head = (Node*)calloc(1, sizeof(Node));
+	head->data = data;
+	head->next = NULL;
+	if((*list)->head == NULL) {
+		(*list)->head = head;
+		(*list)->tail = head;
+		(*list)->move = head;
+	} else {
+		((Node*)((*list)->tail))->next = head;
+		(*list)->tail = head;
+	}
+	head = NULL;
+}
+
+Node *next(List *list) {
+	if(list == NULL) return NULL;
+	Node *this = list->move;
+	if(this == NULL) return NULL;
+	list->move = this->next;
+	return this;	
+}
+
+Node *getHead(List *list) {
+	if(list == NULL) return NULL;
+	return list->head;
+}
+
+Node *getTail(List *list) {
+	if(list == NULL) return NULL;
+	return list->tail;
+}
+
+//重置move指针
+void reset(List *list) {
+	if(list == NULL) return;
+	list->move = list->head;
+}
+
+/**
+void delete(List *list) {
+	if(list == NULL) return ;
+	
+}
+**/
 
 void add(Array **array, char *val/**, int len**/) {
 	if(array == NULL) return ;
@@ -1225,67 +1286,30 @@ void minimalDFA(FA *dfa) {
 	}
 	quicksortEx(finalStateAry, 0, getSize(finalStateAry)-1);
 	quicksortEx(nonFinalStateAry, 0, getSize(nonFinalStateAry)-1);
-	add(&result, finalStateAry);
-	add(&result, nonFinalStateAry);
+//	add(&result, finalStateAry);
+//	add(&result, nonFinalStateAry);
 
-	//Queue *queue = NULL;
-	//push(&queue, finalStateAry);
-	//push(&queue, nonFinalStateAry);
-	//Element *t = top(queue);	
-	//while(t != NULL) {
-	int size = getSize(result);
-	i = 0;
-	while(1) {
-		if(i >= getSize(result)) break;
-	//for(i=0;i<getSize(result);i++) {
-		Array /**FANode**/ *array = (Array*)getByIndex(result, i);
-		//Array *array = (Array*)(t->val);
+	int size = 2;
+	Queue *queue = NULL;
+	push(&queue, finalStateAry);
+	push(&queue, nonFinalStateAry);
+	Element *t = top(queue);	
+	for(i=0;i<size;i++) {
+		Array *array = (Array*)(t->val);
 		int j;
-		Array /**Array**/*tmpAry = NULL;
-		//group the node
-		Array /**Array<FANode>**/ *cTmpAry = NULL;
 		for(j=0;j<getSize(alphabetAry);j++) {
 			char *c = getByIndex(alphabetAry, j);
 			int k;
+			Queue *q = NULL;
+			Element *t1 = top(q);	
 			for(k=0;k<getSize(array);k++) {
 				FANode *src = (FANode*)getByIndex(array, k);
-				//FANode *dest = move(src, *c);				
-				Array /**FANode**/ *dest = moveToSet(move(src, *c), result);
-				int l;
-				Array *cTmp = NULL;
-				for(l=0;l<getSize(tmpAry);l++){
-					Array *tmp = (Array*)getByIndex(tmpAry, l);
-					cTmp = (Array*)getByIndex(cTmpAry, l);
-					if(compareTo(tmp, dest) == true) break;
-				}			
-				//add the new Array	
-				if(l == getSize(tmpAry)) { 
-					add(&tmpAry, dest);
-					Array *a = NULL;
-					add(&a, src);
-					add(&cTmpAry, a);	
-				} else {
-					add(&cTmp, src);
-					quicksortEx(cTmp, 0, getSize(cTmp)-1);
-				}
+				FANode *dest = move(src, *c);
 			}
-			if(getSize(tmpAry) > 1) {
-				for(k=0;k<getSize(tmpAry);k++) {
-					Array *tmp = (Array*)getByIndex(tmpAry, k);
-					//push(&queue, tmp);
-					add(&result, tmp);
-				}
-				removeByIndex(result, i);			
-				break;
-			} else {
-				i++;
-			}
-		}
-		//pop(&queue);
-		//t = top(queue);
-		//i++;
+		}	
 	}
 
+/**	
 	for(i=0;i<getSize(result);i++) {
 		Array *array = (Array*)getByIndex(result, i);
 		int j;
@@ -1295,6 +1319,7 @@ void minimalDFA(FA *dfa) {
 		}
 		printf("\n");
 	}
+**/
 }
 
 void testFA() {
@@ -1379,6 +1404,7 @@ void test() {
 }
 
 void testArray() {
+/**
 	int a[] = {};
 	int b[] = {};
 	int size = sizeof(a) / sizeof(a[0]);
@@ -1396,6 +1422,7 @@ void testArray() {
 	bool result = compareTo(array, arrayB);
 	printf("%c", result);
 	printf("\n");
+**/
 }
 
 
@@ -1468,13 +1495,53 @@ void testMerge(){
 	printf("\n");
 }
 
+void testList() {
+	int a[] = {2,3,4,8,34,102,10,12};
+	List *list = NULL;
+	int size = sizeof(a) / sizeof(a[0]);
+	int i;
+	for(i=0;i<size;i++) {
+		insert(&list, &a[i]);
+	}
+
+	Node *node = next(list);
+	while(node != NULL) {
+		int *data = (int*)(node->data);
+		printf("%d,", *data);
+		node = next(list);
+	}
+	node = getHead(list);
+	if(node == NULL) printf("head is null\n");
+	else {
+		int *data = node->data;
+		printf("head is %d\n", *data);
+	}
+
+	node = getTail(list);
+	if(node == NULL) printf("tail is null\n");
+	else {
+		int *data = node->data;
+		printf("tail is %d\n", *data);
+	}
+	
+	if(list == NULL || list->move == NULL) printf("move is null\n");
+	else printf("move is %d\n", *((Node*)(list->move))->data);
+
+	reset(list);
+	if(list == NULL || list->move == NULL) printf("move is null\n");
+	else printf("move is %d\n", *((Node*)(list->move))->data);
+	printf("\n");
+}
+
 int main(void) {
 //	test();
 //	testMap();
 //	testArray();
 //	testQueue();
 //testQuicksort();
-testFA();
+//testFA();
+
+	testList();
 
 //testMerge();
 //testArray();
