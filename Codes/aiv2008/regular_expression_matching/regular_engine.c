@@ -108,6 +108,11 @@ typedef struct {
 	struct Array/**<Entity>**/ **entity;
 } HashMap;
 
+typedef struct {
+	char *key;
+	char *value;
+} Mapper;
+
 /**
 typedef struct {
 	int stateNum;
@@ -1288,56 +1293,176 @@ void minimalDFA(FA *dfa) {
 	quicksortEx(nonFinalStateAry, 0, getSize(nonFinalStateAry)-1);
 //	add(&result, finalStateAry);
 //	add(&result, nonFinalStateAry);
-
-	int size = 2;
+	
 	Queue *queue = NULL;
 	push(&queue, finalStateAry);
 	push(&queue, nonFinalStateAry);
-	Element *t = top(queue);	
-	for(i=0;i<size;i++) {
-		Array *array = (Array*)(t->val);
-		int j;
-		for(j=0;j<getSize(alphabetAry);j++) {
-			char *c = getByIndex(alphabetAry, j);
-			int k;
-			List/**Array**/ *list = NULL;
-			for(k=0;k<getSize(array);k++) {
-				FANode *src = (FANode*)getByIndex(array, k);
+
+	Element *t = top(queue);
+	for(i=0;i<getSize(alphabetAry);i++) {
+		char *c = getByIndex(alphabetAry, i);
+		while(t != NULL) {
+			Array *nAry = (Array*)(t->val);
+			if(getSize(nAry)<2) continue;
+			int j;
+			Array /**mapper**/ *mapperAry = NULL;
+			for(j=0;j<getSize(nAry);j++) {
+				FANode *src = (FANode*)getByIndex(nAry, j);
 				FANode *dest = move(src, *c);
-				if(dest == NULL) {
-					Node *n = next(list);
-					while(n != NULL) {
-						Array *a = (Array*)(n->data);
-						if(a == NULL) break;
-					}
-					if(n == NULL) insert(&list, NULL);
-					reset(list);
-				} else {
-					Node *n = next(list);
-					while(n != NULL) {
-						Array *a = (Array*)(n->data);
-						int l;
-						for(l=0;l<getSize(a);l++) {
-							
+				int k;
+				for(k=0;k<getSize(mapperAry);k++) {
+					Mapper *mapper = (Mapper*)getByIndex(mapperAry, k);
+					Array *keyAry = mapper->key;
+					Array *valAry = mapper->value;
+					if(dest == NULL && valAry == NULL) break;
+					else if(dest == NULL || valAry == NULL)continue;
+					int l;
+					for(l=0;l<getSize(valAry);l++) {
+						FANode *node = (FANode*)getByIndex(valAry, l);
+						if(dest->stateNum == node->stateNum) break;
+						else if(dest->stateNum < node->stateNum) {
+							l = getSize(valAry);
+							break;
 						}
 					}
-					Element *t1 = top(queue);
+					if(l != getSize(valAry)) {
+						add(&keyAry, src);
+						break;
+					}
+				}
+				if(k == getSize(mapperAry)) {
+					Array *keyAry = NULL;
+					add(keyAry, src);
+					Mapper *mapper = (Mapper*)malloc(sizeof(Mapper));
+					if(mapper == NULL) {
+						printf("minimal dfa error: mapper malloc failed\n");
+						return;							
+					}
+					if(dest == NULL){
+						mapper->key = keyAry;
+						mapper->value = NULL;
+					} else {
+						Element *tt = top(queue);
+						Array *nAry = NULL;
+						while(tt != NULL) {
+							nAry = (Array*)(tt->val);
+							int r;
+							Array *valAry = NULL;
+							for(r=0;r<getSize(nAry);r++) {
+								FANode *n = (FANode*)getByIndex(nAry, r);
+								if(dest->stateNum == n->stateNum) {
+									break;	
+								} else if(dest->stateNum < n->stateNum) {
+									r = getSize(nAry);
+									break;
+								}
+							}	
+							if(r != getSize(nAry)) {
+								mapper->value = nAry;
+								break;
+							}
+						}
+					}
+					add(mapperAry, mapper);
+				}				
+				if(getSize(mapperAry) > 1) {
+					for(k=0;k<getSize(mapperAry);k++) {
+						Mapper *mapper = (Mapper*)getByIndex(mapperAry, k);
+						push(&queue, mapper->key);
+					}
+					pop(&queue);
 				}
 			}
-		}	
-	}
-
-/**	
-	for(i=0;i<getSize(result);i++) {
-		Array *array = (Array*)getByIndex(result, i);
-		int j;
-		for(j=0;j<getSize(array);j++) {
-			FANode *node = (FANode*)getByIndex(array, j);
-			printf("%d,", node->stateNum);
 		}
-		printf("\n");
+	}	
+
+}
+
+void testFA() {
+	/**
+	char *p = "b*.c*..*.b*b*.*c*";
+	FA *nfa = reg2NFA(p);
+	iterateNFA(nfa);
+	printf("\n");
+	FA *dfa = nfa2DFA(nfa);
+	Array *alphabetAry = dfa->alphabetAry;
+	int i;
+	for(i=0;i<getSize(alphabetAry);i++) {
+		char *c = getByIndex(alphabetAry, i);
+		printf("%c,", *c);
 	}
-**/
+	printf("\n");
+	**/
+
+	//q0	
+	Array *edgeAry1 = NULL;
+	FAEdge *edge1 = initFAEdge('f'); 
+	add(&edgeAry1,edge1);
+	FANode *node0 = initFANode(edgeAry1, 0, 0);
+	//q1
+	FAEdge *edge2 = initFAEdge('e');
+	FAEdge *edge3 = initFAEdge('i');
+	Array *edgeAry2 = NULL;
+	add(&edgeAry2, edge2);
+	add(&edgeAry2, edge3);
+	FANode *node1 = initFANode(edgeAry2, 0, 1);
+	//q0->q1
+	edge1->node = node1;
+	//q2
+	FAEdge *edge4 = initFAEdge('e');
+	Array *edgeAry3 = NULL;
+	add(&edgeAry3, edge4);
+	FANode *node2 = initFANode(edgeAry3, 0, 2);
+	//q1->q2
+	edge2->node = node2;
+	//q4
+	FAEdge *edge5 = initFAEdge('e');
+	Array *edgeAry4 = NULL;
+	add(&edgeAry4, edge5);
+	FANode *node4 = initFANode(edgeAry4, 0, 4);
+	//q1->q4
+	edge3->node = node4;
+	//q3
+	FANode *node3 = initFANode(NULL, 1, 3);
+	//q2->q3
+	edge4->node = node3;
+	//q5
+	FANode *node5 = initFANode(NULL, 1, 5);
+	//q4->q5
+	edge5->node = node5;
+	
+	FA *fa = initFA(node0, NULL);
+	Array *alphabetAry = NULL;
+	add(&alphabetAry, 'e');		
+	add(&alphabetAry, 'f');		
+	add(&alphabetAry, 'i');
+	fa->alphabetAry = alphabetAry;
+
+	Array *nodeAry = NULL;
+	add(&nodeAry, node0);
+	add(&nodeAry, node1);
+	add(&nodeAry, node2);
+	add(&nodeAry, node3);
+	add(&nodeAry, node4);
+	add(&nodeAry, node5);
+
+	iterateDFA(fa->start);
+	minimalDFA(fa);		
+}
+
+
+void testArray() {
+/**
+	int a[] = {};
+	int b[] = {};
+	int size = sizeof(a) / sizeof(a[0]);
+	int i;
+
+				Element *tt = top(queue);
+			}
+		}
+	}	
+
 }
 
 void testFA() {
@@ -1420,30 +1545,6 @@ void test() {
 //"bcaccbbacbcbcab"
 //"b*.c*..*.b*b*.*c*"
 }
-
-void testArray() {
-/**
-	int a[] = {};
-	int b[] = {};
-	int size = sizeof(a) / sizeof(a[0]);
-	int i;
-	Array *array = NULL;
-	Array *arrayB = NULL;
-	for(i=0;i<size;i++) {
-		Integer *it = (Integer*)malloc(sizeof(Integer));
-		Integer *it2 = (Integer*)malloc(sizeof(Integer));
-		it->stateNum = a[i];
-		it2->stateNum = b[i];
-		add(&array, it);
-		add(&arrayB, it2);
-	}
-	bool result = compareTo(array, arrayB);
-	printf("%c", result);
-	printf("\n");
-**/
-}
-
-
 
 void testQuicksort() {
 	int a[] = {2,3,5,4,678,43,45678,21,1,3,4,57,56};
