@@ -427,6 +427,15 @@ void addByIndex(Array **array, char *val, int index) {
 	}
 }
 
+void addAll(Array **src, Array *dest) {
+	if(src == NULL) return;
+	if( !getSize(dest)) return;
+	int i;
+	for(i=0;i<getSize(dest);i++) {
+		add(src, getByIndex(dest, i));
+	}
+}
+
 
 int indexOf(Array *array, char *val) {
 	if(array == NULL || val == NULL) return -1;
@@ -1269,6 +1278,58 @@ bool compareTo(Array *a, Array *b) {
 	}
 }
 
+Array/**Array<FANode>**/ *recursion(Array *nodeAry, Array *letterAry, int j, Array *nodeAryAry) {
+	if(j >= getSize(letterAry || getSize(nodeAry) < 2)) return nodeAry;
+		//int j=0;
+		int i;
+		for(i=0;i<getSize(nodeAry);i++) {
+			//Aray *srcAry = (Element*)(t->val);
+			Array *destAry = NULL;
+			char *c = getByIndex(letterAry, j);
+			FANode *src = (FANode*)getByIndex(nodeAry, i);
+			FANode *dest = move(src, *c);
+			Mapper *mapper = (Mapper*)malloc(sizeof(Mapper));
+			if(mapper == NULL) {
+				printf("mapper malloc failed\n");
+				return;
+			}
+				Array *keyAry = NULL;
+				Array *valAry = NULL;
+				add(&keyAry, src);
+				mapper->key = keyAry;
+				if(dest == NULL) add(&valAry, dest);
+				else {
+					int l;
+					for(l=0;l<getSize(nodeAryAry);l++) {
+						Array *tmpAry = (Array*)getByIndex(nodeAryAry, l);
+						int index = indexOf(tmpAry, dest);
+						if(index > -1) {
+							//add(&destAry, tmpAry);
+							add(&valAry, tmpAry);
+							break;
+						}
+					}
+				}
+				mapper->value = valAry;
+				add(&destAry, mapper);
+			}
+			k=0;
+			int kSize = getSize(destAry);
+			int lSize = kSize;
+			while(k<kSize){
+				Mapper *kMapper = (Mapper*)getByIndex(destAry, k);
+				int l=k+1;
+				while(l<lSize) {
+					Mapper *lMapper = (Mapper*)getByIndex(destAry, l);
+					if(kMapper->value == NULL && lMapper->value == NULL) {
+						//add(&kMapper->key, 
+					}
+				}
+				k++;
+			}
+	}
+}
+
 void minimalDFA(FA *dfa) {
 	if(dfa == NULL) return;
 	Array /**Array<FANode>**/ *result = NULL;
@@ -1299,18 +1360,28 @@ void minimalDFA(FA *dfa) {
 	push(&queue, nonFinalStateAry);
 
 	Element *t = top(queue);
+	while(t != NULL) {
 	for(i=0;i<getSize(alphabetAry);i++) {
 		char *c = getByIndex(alphabetAry, i);
-		while(t != NULL) {
+		printf("c=%c\n", *c);
 			Array *nAry = (Array*)(t->val);
-			if(getSize(nAry)<2) continue;
+			if(getSize(nAry)<2) {
+				t = t->next;
+				continue;
+			}
 			int j;
 			Array /**mapper**/ *mapperAry = NULL;
 			for(j=0;j<getSize(nAry);j++) {
 				FANode *src = (FANode*)getByIndex(nAry, j);
+				if(src->edge == NULL) continue;
 				FANode *dest = move(src, *c);
+				if(src != NULL) printf("src=%d,", src->stateNum);
+				else printf("src is null,");
+				if(dest != NULL) printf("dest=%d\n", dest->stateNum);
+				else printf("dest is null\n");
 				int k;
 				for(k=0;k<getSize(mapperAry);k++) {
+			printf("ccc\n");
 					Mapper *mapper = (Mapper*)getByIndex(mapperAry, k);
 					Array *keyAry = mapper->key;
 					Array *valAry = mapper->value;
@@ -1332,14 +1403,14 @@ void minimalDFA(FA *dfa) {
 				}
 				if(k == getSize(mapperAry)) {
 					Array *keyAry = NULL;
-					add(keyAry, src);
+					add(&keyAry, src);
 					Mapper *mapper = (Mapper*)malloc(sizeof(Mapper));
 					if(mapper == NULL) {
 						printf("minimal dfa error: mapper malloc failed\n");
 						return;							
 					}
+					mapper->key = keyAry;
 					if(dest == NULL){
-						mapper->key = keyAry;
 						mapper->value = NULL;
 					} else {
 						Element *tt = top(queue);
@@ -1361,21 +1432,43 @@ void minimalDFA(FA *dfa) {
 								mapper->value = nAry;
 								break;
 							}
+							tt = tt->next;
 						}
 					}
-					add(mapperAry, mapper);
+					add(&mapperAry, mapper);
 				}				
 				if(getSize(mapperAry) > 1) {
+					printf("aaaa\n");
+					printf("---begin print mapper array---\n");
 					for(k=0;k<getSize(mapperAry);k++) {
 						Mapper *mapper = (Mapper*)getByIndex(mapperAry, k);
+						Array *keyAry = mapper->key;
+						int l;
+						for(l=0;l<getSize(keyAry);l++) {
+							FANode *n = (FANode*)getByIndex(keyAry, l);
+							printf("%d,", n->stateNum);
+						}
+						printf("\n");
 						push(&queue, mapper->key);
 					}
+					printf("---end print mapper array---\n");
 					pop(&queue);
 				}
 			}
 		}
+			t = t->next;
 	}	
-
+	t = top(queue);
+	while(t != NULL) {
+		Array *array = (Array*)(t->val);
+		int i;
+		for(i=0;i<getSize(array);i++) {
+			FANode *node = (FANode*)getByIndex(array,i);
+			printf("%d,", node->stateNum);
+		}
+		printf("\n");
+		t = t->next;
+	}
 }
 
 void testFA() {
@@ -1433,10 +1526,39 @@ void testFA() {
 	
 	FA *fa = initFA(node0, NULL);
 	Array *alphabetAry = NULL;
-	add(&alphabetAry, 'e');		
-	add(&alphabetAry, 'f');		
-	add(&alphabetAry, 'i');
+	char *c = NULL;
+	int i;
+	c = malloc(sizeof(char));
+	if(c == NULL){
+		printf("malloc failed\n");
+		return;
+	}
+	*c = 'e';
+	add(&alphabetAry, c);
+	c = NULL;
+	//realloc(c, sizeof(char));		
+	c = malloc(sizeof(char));
+	if(c == NULL) {
+		printf("realloc failed\n");
+		return;
+	}
+	*c = 'f';
+	add(&alphabetAry, c);
+	c = NULL;		
+	//realloc(c, sizeof(char));		
+	c = malloc(sizeof(char));
+	if(c == NULL) {
+		printf("realloc failed\n");
+		return;
+	}
+	*c = 'i';
+	add(&alphabetAry, c);
 	fa->alphabetAry = alphabetAry;
+	for(i=0;i<getSize(alphabetAry);i++) {
+		char *key = getByIndex(alphabetAry, i);
+		printf("%p,", key);
+	}
+	printf("\n");
 
 	Array *nodeAry = NULL;
 	add(&nodeAry, node0);
@@ -1445,6 +1567,7 @@ void testFA() {
 	add(&nodeAry, node3);
 	add(&nodeAry, node4);
 	add(&nodeAry, node5);
+	fa->nodeAry = nodeAry;
 
 	iterateDFA(fa->start);
 	minimalDFA(fa);		
@@ -1452,89 +1575,25 @@ void testFA() {
 
 
 void testArray() {
-/**
-	int a[] = {};
-	int b[] = {};
-	int size = sizeof(a) / sizeof(a[0]);
+	int a[] = {4,5,6,9,3,23,4,67,8,9,10};
+	int b[] = {1,9,87};
+	int size = sizeof(a)/sizeof(a[0]);
+	Array *arrayA = NULL;
 	int i;
-
-				Element *tt = top(queue);
-			}
-		}
-	}	
-
-}
-
-void testFA() {
-	/**
-	char *p = "b*.c*..*.b*b*.*c*";
-	FA *nfa = reg2NFA(p);
-	iterateNFA(nfa);
-	printf("\n");
-	FA *dfa = nfa2DFA(nfa);
-	Array *alphabetAry = dfa->alphabetAry;
-	int i;
-	for(i=0;i<getSize(alphabetAry);i++) {
-		char *c = getByIndex(alphabetAry, i);
-		printf("%c,", *c);
+	for(i=0;i<size;i++) {
+		add(&arrayA, &a[i]);
+	}
+	size = sizeof(b)/sizeof(b[0]);
+	Array *arrayB = NULL;
+	for(i=0;i<size;i++) {
+		add(&arrayB, &b[i]);
+	}
+	addAll(&arrayA, arrayB);
+	for(i=0;i<getSize(arrayA);i++) {
+		int *val = (int*)getByIndex(arrayA, i);
+		printf("%d,", *val);
 	}
 	printf("\n");
-	**/
-
-	//q0	
-	Array *edgeAry1 = NULL;
-	FAEdge *edge1 = initFAEdge('f'); 
-	add(&edgeAry1,edge1);
-	FANode *node0 = initFANode(edgeAry1, 0, 0);
-	//q1
-	FAEdge *edge2 = initFAEdge('e');
-	FAEdge *edge3 = initFAEdge('i');
-	Array *edgeAry2 = NULL;
-	add(&edgeAry2, edge2);
-	add(&edgeAry2, edge3);
-	FANode *node1 = initFANode(edgeAry2, 0, 1);
-	//q0->q1
-	edge1->node = node1;
-	//q2
-	FAEdge *edge4 = initFAEdge('e');
-	Array *edgeAry3 = NULL;
-	add(&edgeAry3, edge4);
-	FANode *node2 = initFANode(edgeAry3, 0, 2);
-	//q1->q2
-	edge2->node = node2;
-	//q4
-	FAEdge *edge5 = initFAEdge('e');
-	Array *edgeAry4 = NULL;
-	add(&edgeAry4, edge5);
-	FANode *node4 = initFANode(edgeAry4, 0, 4);
-	//q1->q4
-	edge3->node = node4;
-	//q3
-	FANode *node3 = initFANode(NULL, 1, 3);
-	//q2->q3
-	edge4->node = node3;
-	//q5
-	FANode *node5 = initFANode(NULL, 1, 5);
-	//q4->q5
-	edge5->node = node5;
-	
-	FA *fa = initFA(node0, NULL);
-	Array *alphabetAry = NULL;
-	add(&alphabetAry, 'e');		
-	add(&alphabetAry, 'f');		
-	add(&alphabetAry, 'i');
-	fa->alphabetAry = alphabetAry;
-
-	Array *nodeAry = NULL;
-	add(&nodeAry, node0);
-	add(&nodeAry, node1);
-	add(&nodeAry, node2);
-	add(&nodeAry, node3);
-	add(&nodeAry, node4);
-	add(&nodeAry, node5);
-
-	iterateDFA(fa->start);
-	minimalDFA(fa);		
 }
 
 void test() {
@@ -1660,10 +1719,10 @@ int main(void) {
 //testQuicksort();
 //testFA();
 
-	testList();
+//	testList();
 
 //testMerge();
-//testArray();
+testArray();
 	return 0;
 }
 
