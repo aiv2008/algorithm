@@ -1278,11 +1278,31 @@ bool compareTo(Array *a, Array *b) {
 	}
 }
 
+void printNodeAryAry(Array *array) {
+	printf("---begin pring node array array--\n");
+	int i;
+	for(i=0;i<getSize(array);i++) {
+		Array *a = (Array*)getByIndex(array, i);
+		if(!getSize(a)){
+			printf("node array is 0\n");
+			continue;
+		}
+		int j;
+		for(j=0;j<getSize(a);j++) {
+			FANode *node = (FANode*)getByIndex(a, j);
+			if(node == NULL) printf("node is null,");
+			else printf("%d,", node->stateNum);	
+		}
+		printf("\n");
+	}
+	printf("---end pring node array array--\n");
+}
 
 /**
  * 该方法输入的是一个fanode数组， 输出是一个fanode数组的数组
  * **/
 Array/**Array<FANode>**/ *recursion(Array *nodeAry, Array *letterAry, int j, Array *nodeAryAry) {
+	printNodeAryAry(nodeAryAry);
 	if(j >= getSize(letterAry) || getSize(nodeAry) < 2){
 		Array *result = NULL;
 		add(&result, nodeAry);
@@ -1330,7 +1350,16 @@ Array/**Array<FANode>**/ *recursion(Array *nodeAry, Array *letterAry, int j, Arr
 			while(l<lSize) {
 				Mapper *lMapper = (Mapper*)getByIndex(destAry, l);
 				if(!getSize(kMapper->value) && !getSize(lMapper->value)) {
-					addAll(&kMapper->key, lMapper->key); 
+					Array *kAry = (Array*)(kMapper->key);
+					addAll(&kAry, (Array*)(lMapper->key)); 
+					int r ;
+					printf("---print k array---\n");
+					for(r=0;r<getSize(kAry);r++) {
+						FANode *nd = (FANode*)getByIndex(kAry, r);
+						if(nd==NULL) printf("node is null,");
+						else printf("%d,", nd->stateNum);
+					}
+					printf("\n");
 					removeByIndex(destAry, l);
 					kSize = getSize(destAry);
 					lSize = kSize;
@@ -1340,8 +1369,17 @@ Array/**Array<FANode>**/ *recursion(Array *nodeAry, Array *letterAry, int j, Arr
 					FANode *kN = (FANode*)getByIndex(kAry, 0);
 					FANode *lN = (FANode*)getByIndex(lAry, 0);
 					if((kN == NULL && lN == NULL) || (kN != NULL && lN != NULL && kN->stateNum == lN->stateNum)) {
-						addAll(&kMapper->key, lMapper->key); 
+						Array *kAry = (Array*)(kMapper->key);
+						addAll(&kAry, (Array*)(lMapper->key)); 
 						removeByIndex(destAry, l);
+					int r ;
+					printf("---print k array---\n");
+					for(r=0;r<getSize(kAry);r++) {
+						FANode *nd = (FANode*)getByIndex(kAry, r);
+						if(nd==NULL) printf("node is null,");
+						else printf("%d,", nd->stateNum);
+					}
+					printf("\n");
 						kSize = getSize(destAry);
 						lSize = kSize;
 					} else l++;
@@ -1354,9 +1392,11 @@ Array/**Array<FANode>**/ *recursion(Array *nodeAry, Array *letterAry, int j, Arr
 		if(getSize(destAry) > 1) {
 			for(k=0;k<getSize(nodeAryAry);k++) {
 				Array *tmpAry = (Array*)getByIndex(nodeAryAry, k);
+				printf("size of tmpary is %d\n", getSize(tmpAry));
 				FANode *tmpN1 = (FANode*)getByIndex(nodeAry, 0);
 				FANode *tmpN2 = (FANode*)getByIndex(tmpAry, 0);
-				
+				if(tmpN1 == NULL) printf("n1 is null\n");	
+				if(tmpN2 == NULL) printf("n2 is null\n");	
 				if(tmpN1->stateNum == tmpN2->stateNum) {
 					removeByIndex(nodeAryAry, k);
 					break;
@@ -1374,7 +1414,7 @@ Array/**Array<FANode>**/ *recursion(Array *nodeAry, Array *letterAry, int j, Arr
 					else printf("%d,", node->stateNum);
 				}
 				printf("\n");
-				add(&nodeAryAry, (Array*)(mapper->key));
+				add(&nodeAryAry, keyAry);
 			}
 		}
 		printf("aaaa\n");
@@ -1417,9 +1457,9 @@ void minimalDFA(FA *dfa) {
 	}
 	quicksortEx(finalStateAry, 0, getSize(finalStateAry)-1);
 	quicksortEx(nonFinalStateAry, 0, getSize(nonFinalStateAry)-1);
-	add(&nodeAryAry, finalStateAry);
-	add(&nodeAryAry, nonFinalStateAry);
-	
+	if(getSize(finalStateAry))	add(&nodeAryAry, finalStateAry);
+	if(getSize(nonFinalStateAry)) add(&nodeAryAry, nonFinalStateAry);
+	printf("size of finalStateAry is %d, size of nonFinalStateAry is %d\n", getSize(finalStateAry), getSize(nonFinalStateAry));	
 	Array *result = NULL;
 	for(i=0;i<getSize(nodeAryAry);i++) {
 		Array *tmpary = (Array*)getByIndex(nodeAryAry, i);
