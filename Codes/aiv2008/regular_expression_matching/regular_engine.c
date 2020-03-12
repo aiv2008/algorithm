@@ -968,6 +968,12 @@ FA *nfa2DFA(FA *nfa) {
 		printf("nfa to dfa failed: nfa is null\n");
 		return NULL;
 	}
+/**
+	printf("---begin print nfa end states---\n");
+	FANode *end = nfa->end;
+	printf("%d\n", end->stateNum);
+	printf("---end print nfa end states---\n");
+**/
 	int stateNum = 0;
 	FANode *nfaStartNode = nfa->start;
 	//nfa的初始状态值（只通过epsilon能到达的所有状态）
@@ -994,16 +1000,20 @@ FA *nfa2DFA(FA *nfa) {
 	int orgiVal = 1;
 	HashMap *letterMap = NULL;
 	while(1) {
-		printf("size=%d\n", size);
+		//printf("size=%d\n", size);
 		if(n >= size ) break;
 		Array/**FANode**/ *tempStates = (Array*)getByIndex(newDFAStateAry, n);
+/**
+		printf("---begin print nfa states in dfa\n");	
 		int u;
-		printf("---print aaa---\n");
 		for(u=0;u<getSize(tempStates);u++) {
 			FANode *fanode = (FANode*)getByIndex(tempStates, u);
 			printf("%d,", fanode->stateNum);
 		}
 		printf("\n");
+		printf("---end print nfa states in dfa\n");	
+		printf("\n");
+**/		
 		node = (FANode*)getByIndex(newDFANodeAry, n);
 		updateFANode(node, tempStates);
 		if(node->state == 1) add(&ends, node);
@@ -1015,21 +1025,13 @@ FA *nfa2DFA(FA *nfa) {
 			FANode *tempNode = (FANode*)getByIndex(tempStates, i);
 			Array/**<FAEdge>**/ *tempEdges = tempNode->edge;
 			int j;
-			//printf("size of nfa edge is %d\n", getSize(tempEdges));
 			for(j=0;j<getSize(tempEdges);j++) {
 				FAEdge *e = (FAEdge*)getByIndex(tempEdges, j );
 				char c = e->value;
 				if(c<97 || c>122) continue;
-				printf("key=%p,%c\n",&c, c);
 				int *cVal = (int*)get(letterMap, c);
 				if(cVal == NULL) {
-					printf("key2=%p,%c\n",&c, c);
 					put(&letterMap, c, &orgiVal );
-					int r=0;
-					for(r=0;r<getSize(alphabetCharAry);r++) {
-						char *cc = getByIndex(alphabetCharAry, r);
-						printf("cc=%c\n", *cc);
-					}
 					char *pc = malloc(sizeof(char));
 					memcpy(pc, &c, sizeof(char));
 					add(&alphabetCharAry, pc);
@@ -1124,17 +1126,7 @@ FA *nfa2DFA(FA *nfa) {
 		}
 		node->edge = dfaEdgeAry;
 		n++;
-		//printDFANode(node, tempStates);
-//		pop(&queue);
-		//t = top(queue);
-		//t = t->next;
 	}
-	int i;
-	for(i=0;i<getSize(alphabetCharAry);i++) {
-		char *cVal = getByIndex(alphabetCharAry, i);
-		printf("%c,", *cVal);
-	}
-	printf("\n");
 	fa->alphabetAry = alphabetCharAry;	
 	if(ends == NULL){
 		printf("nfa to dfa failed: no end state in DFA\n");
@@ -1231,36 +1223,6 @@ FANode *move(FANode *node, char c) {
 	return result;
 }
 
-//返回该节点属于的集合，如果返回是空， 则报错， 因为不可能没有集合包含该节点（set必须先排序）
-Array /**FANode**/ *moveToSet(FANode *node, Array /**Array**/*set) {
-	if(node == NULL || set == NULL ) {
-		printf("move to set error: node or set is null\n");
-		return NULL;
-	}
-	Array /**FANode**/ *result = NULL;
-	int i;
-	for(i=0;i<getSize(set);i++) {
-		Array /**FANode**/ *array = (Array*)getByIndex(set, i);
-		int j;
-		for(j=0;j<getSize(array);j++) {
-			FANode *nd = (FANode*)getByIndex(array, j);
-			if(nd->stateNum == node->stateNum) break;
-			else if(nd->stateNum > node->stateNum) {
-				j = getSize(array);
-				break;
-			}
-		}
-		if(j == getSize(array)) {//找到了包含该节点的集合
-			result = array;
-			break;
-		}
-	}
-	if(result == NULL){
-		printf("move to set error: node not included in any set\n");
-	}
-	return result;
-}
-
 //compare two sorted array
 bool compareTo(Array *a, Array *b) {
 	if(a == NULL && b == NULL) return true;
@@ -1302,8 +1264,17 @@ void printNodeAryAry(Array *array) {
  * 该方法输入的是一个fanode数组， 输出是一个fanode数组的数组
  * **/
 Array/**Array<FANode>**/ *recursion(Array *nodeAry, Array *letterAry, int j, Array *nodeAryAry) {
-	printNodeAryAry(nodeAryAry);
+	//printNodeAryAry(nodeAryAry);
 	if(j >= getSize(letterAry) || getSize(nodeAry) < 2){
+/**
+		int i;
+		printf("--printf return array---\n");
+		for(i=0;i<getSize(nodeAry);i++) {
+			FANode *node  = (FANode*)getByIndex(nodeAry, i);
+			printf("%d,", node->stateNum);
+		}
+		printf("\n\n");
+**/
 		Array *result = NULL;
 		add(&result, nodeAry);
 		return result;
@@ -1352,6 +1323,7 @@ Array/**Array<FANode>**/ *recursion(Array *nodeAry, Array *letterAry, int j, Arr
 				if(!getSize(kMapper->value) && !getSize(lMapper->value)) {
 					Array *kAry = (Array*)(kMapper->key);
 					addAll(&kAry, (Array*)(lMapper->key)); 
+/**
 					int r ;
 					printf("---print k array---\n");
 					for(r=0;r<getSize(kAry);r++) {
@@ -1360,6 +1332,7 @@ Array/**Array<FANode>**/ *recursion(Array *nodeAry, Array *letterAry, int j, Arr
 						else printf("%d,", nd->stateNum);
 					}
 					printf("\n");
+**/
 					removeByIndex(destAry, l);
 					kSize = getSize(destAry);
 					lSize = kSize;
@@ -1372,14 +1345,6 @@ Array/**Array<FANode>**/ *recursion(Array *nodeAry, Array *letterAry, int j, Arr
 						Array *kAry = (Array*)(kMapper->key);
 						addAll(&kAry, (Array*)(lMapper->key)); 
 						removeByIndex(destAry, l);
-					int r ;
-					printf("---print k array---\n");
-					for(r=0;r<getSize(kAry);r++) {
-						FANode *nd = (FANode*)getByIndex(kAry, r);
-						if(nd==NULL) printf("node is null,");
-						else printf("%d,", nd->stateNum);
-					}
-					printf("\n");
 						kSize = getSize(destAry);
 						lSize = kSize;
 					} else l++;
@@ -1392,11 +1357,8 @@ Array/**Array<FANode>**/ *recursion(Array *nodeAry, Array *letterAry, int j, Arr
 		if(getSize(destAry) > 1) {
 			for(k=0;k<getSize(nodeAryAry);k++) {
 				Array *tmpAry = (Array*)getByIndex(nodeAryAry, k);
-				printf("size of tmpary is %d\n", getSize(tmpAry));
 				FANode *tmpN1 = (FANode*)getByIndex(nodeAry, 0);
 				FANode *tmpN2 = (FANode*)getByIndex(tmpAry, 0);
-				if(tmpN1 == NULL) printf("n1 is null\n");	
-				if(tmpN2 == NULL) printf("n2 is null\n");	
 				if(tmpN1->stateNum == tmpN2->stateNum) {
 					removeByIndex(nodeAryAry, k);
 					break;
@@ -1405,31 +1367,15 @@ Array/**Array<FANode>**/ *recursion(Array *nodeAry, Array *letterAry, int j, Arr
 			for(k=0;k<getSize(destAry);k++) {
 				mapper = (Mapper*)getByIndex(destAry, k);
 				Array *keyAry = (Array*)(mapper->key);
-				printf("---print key array---\n");
-				printf("size of key array is %d\n", getSize(keyAry));
-				int l;
-				for(l=0;l<getSize(keyAry);l++) {
-					FANode *node = (FANode*)getByIndex(keyAry, l);
-					if(node == NULL) printf("node is null,");
-					else printf("%d,", node->stateNum);
-				}
-				printf("\n");
 				add(&nodeAryAry, keyAry);
 			}
 		}
-		printf("aaaa\n");
 		Array *result = NULL;
 		HashMap *map = NULL;
+		//printf("sizeof dest ary is %d\n", getSize(destAry));
 		for(k=0;k<getSize(destAry);k++) {
 			Mapper *mapper = (Mapper*)getByIndex(destAry, k);
 			Array *keyAry = (Array*)(mapper->key);
-			int l;
-			for(l=0;l<getSize(keyAry);l++) {
-					FANode *node = (FANode*)getByIndex(keyAry, l);
-					if(node == NULL) printf("node is null,");
-					else printf("%d,", node->stateNum);
-			}
-			printf("\n");
 			addAll(&result, recursion((Array*)(mapper->key), letterAry, j+1, nodeAryAry));
 		}
 		return result;
@@ -1457,14 +1403,33 @@ void minimalDFA(FA *dfa) {
 	}
 	quicksortEx(finalStateAry, 0, getSize(finalStateAry)-1);
 	quicksortEx(nonFinalStateAry, 0, getSize(nonFinalStateAry)-1);
-	if(getSize(finalStateAry))	add(&nodeAryAry, finalStateAry);
-	if(getSize(nonFinalStateAry)) add(&nodeAryAry, nonFinalStateAry);
-	printf("size of finalStateAry is %d, size of nonFinalStateAry is %d\n", getSize(finalStateAry), getSize(nonFinalStateAry));	
 	Array *result = NULL;
-	for(i=0;i<getSize(nodeAryAry);i++) {
-		Array *tmpary = (Array*)getByIndex(nodeAryAry, i);
-		addAll(&result, recursion(tmpary, alphabetAry, 0, nodeAryAry));
+	printf("size of finalStateAry is %d, size of nonFinalStateAry is %d\n", getSize(finalStateAry), getSize(nonFinalStateAry));	
+	//printf("sizeof nodeAryAry is %d\n", getSize(nodeAryAry));
+	if(getSize(nonFinalStateAry)) {
+		add(&nodeAryAry, nonFinalStateAry);
+		addAll(&result, recursion(nonFinalStateAry, alphabetAry, 0, nodeAryAry));
 	}
+	if(getSize(finalStateAry))	{
+		add(&nodeAryAry, finalStateAry);
+		addAll(&result, recursion(finalStateAry, alphabetAry, 0, nodeAryAry));
+	}
+	
+/**
+	for(i=0;;i++) {
+		if(i>=getSize(nodeAryAry)) break;
+		printf("--aa----\n");
+		Array *tmpary = (Array*)getByIndex(nodeAryAry, i);
+		int j;
+		for(j=0;j<getSize(tmpary);j++) {
+			FANode *node = (FANode*)getByIndex(tmpary, j);
+			printf("%d,", node->stateNum);
+		}
+		printf("\n");
+		addAll(&result, recursion(tmpary, alphabetAry, 0, nodeAryAry));
+		//size = getSize(nodeAryAry);
+	}
+**/
 	HashMap *map = NULL;
 	int size = getSize(result);
 	for(i=0;i<size;) {
@@ -1474,6 +1439,9 @@ void minimalDFA(FA *dfa) {
 			put(&map, node->stateNum, array);
 			i++;
 		} else {
+			printf("---begin print removed ele---\n");
+			printf("%d\n", node->stateNum);
+			printf("---end print removed ele---\n\n");
 			removeByIndex(result, i);
 			size = getSize(result);
 		}
@@ -1494,6 +1462,14 @@ void minimalDFA(FA *dfa) {
 }
 
 void testFA() {
+	char *p = "c*a*b";		
+	FA *nfa = reg2NFA(p);
+//	iterateNFA(nfa);
+	//FANode *node = nfa2DFA(nfa);
+	//FA *dfa = nfa2DFA(nfa);
+	FA *dfa = nfa2DFA(nfa);
+//	iterateDFA(dfa->start);
+	minimalDFA(dfa);
 /**
 	//q0	
 	Array *edgeAry1 = NULL;
@@ -1580,13 +1556,6 @@ void testFA() {
 	iterateDFA(fa->start);
 	minimalDFA(fa);
 **/
-	
-	char *p = "c*a*b*";		
-	FA *nfa = reg2NFA(p);
-	//FANode *node = nfa2DFA(nfa);
-	//FA *dfa = nfa2DFA(nfa);
-	FA *dfa = nfa2DFA(nfa);
-	minimalDFA(dfa);
 }
 
 
