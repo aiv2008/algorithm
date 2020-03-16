@@ -786,6 +786,58 @@ FA *reg2NFA(char *p) {
 	return nfa;
 }
 
+/**
+//加入优先级别
+FA *reg2NFAEx(char *p) {
+	//char *pMove = p;
+	char *pStart = p;
+	char *pMove = pStart;
+	FA *nfa = NULL;
+	FA *nfaTmp = NULL;
+	HashMap *map = NULL;
+	Array *array = NULL;
+	Queue *tokenQueue = NULL;
+	Queue *nfaQueue = NULL;
+	int stateNum = 0;
+	int origValue = 1;
+	//先加入一个epsilon，以匹配空串
+	nfa = epsilonFA(&stateNum) ;
+	stateNum++; 
+	//是否已包含所有字母表里的字母， 因为当模式里含有'.'时， 即包含字母表的所有字母
+	while(*pMove != '\0') {
+		if(*(pMove+1) == '*') {
+			if(*pMove == '.') {
+				nfaTmp = unonAllFA(&stateNum);
+			} else {
+				nfaTmp = symbolFA(pMove, &stateNum);
+			}
+			stateNum++;
+			nfaTmp = kleenStarFA(nfaTmp, &stateNum);
+			stateNum++; 
+			nfa = concatFA(nfa, nfaTmp);
+			pMove+=2;
+		} else {
+			if(*pMove == '.') {
+				nfaTmp = unonAllFA(&stateNum);
+			}else if(*pMove == '|') {
+				push(&tokenQueue, pMove);
+				push(&nfaQueue, nfa);
+				pStart = pMove + 1;
+				pMove = pStart;		
+			} else {
+				nfaTmp = symbolFA(pMove, &stateNum);
+			}
+			stateNum++;
+			nfa = concatFA(nfa, nfaTmp);
+			pMove++;
+		}
+		nfaTmp = NULL;
+	}
+	return nfa;
+}
+
+**/
+
 Array *delta(FANode *node, char value) {
 	if( node == NULL) {
 		printf("delta function failed: nfa node is null\n");
