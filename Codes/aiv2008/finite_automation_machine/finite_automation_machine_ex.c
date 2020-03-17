@@ -31,45 +31,6 @@ typedef struct {
 	struct Array /**char(alphabet)**/ *alphabetAry;
 } FA;
 
-/**
-typedef struct {
-	//用数字区分不同的状态
-	int stateNum;
-	struct Array**<NFAEdge>** *edge;
-	//是否为接受状态 1 是 0 否
-	int state;
-} NFANode;
-
-typedef struct {
-	struct NFANode *node;
-	char value;
-} NFAEdge;
-
-typedef struct {
-	struct NFANode *start;
-	//注: end节点不能有任何指向其他节点的边
-	struct NFANode *end;
-} NFA;
-
-typedef struct {
-	//用数字区分不同的状态
-	int stateNum;
-	struct Array**<NFANode>** *states;
-	struct Array**<DFAEdge>** *edges;
-	int state;
-} DFANode;
-
-typedef struct {
-	struct DFANode *node;
-	char value;
-} DFAEdge;
-
-typedef struct {
-	struct DFANode *start;
-	struct Array**<DFANode>** *ends;
-} DFA;
-**/
-
 //struct of the element of the queue
 typedef struct {
 	char *val;
@@ -81,6 +42,12 @@ typedef struct {
 	struct Element *top;
 	struct Element *bottom;	
 } Queue;
+
+//struct of stack
+typedef struct {
+	struct Element *top;
+	struct Element *bottom;	
+} Stack;
 
 typedef struct {
 	char **val;
@@ -112,12 +79,6 @@ typedef struct {
 	char *key;
 	char *value;
 } Mapper;
-
-/**
-typedef struct {
-	int stateNum;
-} Integer;
-**/
 
 void swap(int *a, int *b/**, int len**/) {
 	int temp = *a;
@@ -244,6 +205,24 @@ void quicksortEx(Array *array, int p, int r) {
 		quicksortEx(array, p, q-1);
 		quicksortEx(array, q+1, r);
 	}
+}
+
+void pushStk(Stack **stack, void *val) {
+	if(stack == NULL) return ;
+	if(*stack == NULL) {
+		*stack = (Stack*)calloc(1, sizeof(Stack));
+	}
+	Element *top = (Element*)calloc(1, sizeof(Element));
+	top->val = val;
+	top->next = NULL;
+	if((*stack)->top == NULL) {
+		(*stack)->top = top;
+		(*stack)->bottom = top;
+	} else {
+		top->next = (*stack)->top;
+		(*stack)->top = top;
+	}
+	top = NULL;
 }
 
 void push(Queue **queue, void *val) {
@@ -786,57 +765,80 @@ FA *reg2NFA(char *p) {
 	return nfa;
 }
 
-/**
 //加入优先级别
 FA *reg2NFAEx(char *p) {
-	//char *pMove = p;
-	char *pStart = p;
-	char *pMove = pStart;
+	char *pMove = p;
+	//char *pStart = p;
+	//char *pMove = pStart;
 	FA *nfa = NULL;
 	FA *nfaTmp = NULL;
 	HashMap *map = NULL;
 	Array *array = NULL;
-	Queue *tokenQueue = NULL;
-	Queue *nfaQueue = NULL;
+	Stack *tokenStk = NULL;
+	Stack *nfaStk = NULL;
+//	Queue *concatQue = NULL;
 	int stateNum = 0;
 	int origValue = 1;
 	//先加入一个epsilon，以匹配空串
 	nfa = epsilonFA(&stateNum) ;
+	pushStk(&nfaStk, nfa);
 	stateNum++; 
 	//是否已包含所有字母表里的字母， 因为当模式里含有'.'时， 即包含字母表的所有字母
 	while(*pMove != '\0') {
-		if(*(pMove+1) == '*') {
-			if(*pMove == '.') {
-				nfaTmp = unonAllFA(&stateNum);
-			} else {
-				nfaTmp = symbolFA(pMove, &stateNum);
-			}
+		if(*pMove == '*') {
+			Element *t = top(nfaStk);
+			FA *tmpFA = (FA*)(t->val);
+			nfa = kleenStarFA(tmpFA, &stateNum) ;
+			//pop(&nfaStk);
+			//push(&nfaStk, nfa);
 			stateNum++;
-			nfaTmp = kleenStarFA(nfaTmp, &stateNum);
-			stateNum++; 
-			nfa = concatFA(nfa, nfaTmp);
-			pMove+=2;
-		} else {
-			if(*pMove == '.') {
-				nfaTmp = unonAllFA(&stateNum);
-			}else if(*pMove == '|') {
-				push(&tokenQueue, pMove);
-				push(&nfaQueue, nfa);
-				pStart = pMove + 1;
-				pMove = pStart;		
-			} else {
-				nfaTmp = symbolFA(pMove, &stateNum);
+		} else if(*pMove == '|') {
+			Element *tmpTop = top(tokenStk);
+			char *c = tmpTop->val;
+			while(*c == '-') {
+				Element *tmpNFATop = top(nfaStk);
+				FA *tmpTopFA = (FA*)(tmpNFATop->val);
+				tmpNFATop = tmpNFATop->next;
+				FA *tmpBotFA = (FA*)(tmpNFATop->val);
+				nfa = concatFA(tmpBotFA, tmpTopFA);
+				pop(&nfaStk);
+				pop(&tokenStk);
+				tmpTop = top(tokenStk);
 			}
-			stateNum++;
-			nfa = concatFA(nfa, nfaTmp);
-			pMove++;
+			push(&tokenStk, pMove);
+		} else if(*pMove == '(') {
+			push(&tokenStk, pMove);
+		} else if(*pMove == ')') {
+			Element *tmpTop = top(tokenStk);
+			char *c = tmpTop->val;
+			while(*c != '(') {
+				if(*c == '-') {
+					Element *tmpNFATop = top(nfaStk);
+					FA *tmpTopFA = (FA*)(tmpNFATop->val);
+					tmpNFATop = tmpNFATop->next;
+					FA *tmpBotFA = (FA*)(tmpNFATop->val);
+					nfa = concatFA(tmpBotFA, tmpTopFA);
+				} else if(*c == '|') {
+					Element *tmpNFATop = top(nfaStk);
+					FA *tmpTopFA = (FA*)(tmpNFATop->val);
+					tmpNFATop = tmpNFATop->next;
+					FA *tmpBotFA = (FA*)(tmpNFATop->val);
+					nfa = unonFA(tmpBotFA, tmpTopFA, &stateNum);
+					stateNum++;
+				}
+				pop(&nfaStk);
+				pop(&tokenStk);
+				tmpTop = top(tokenStk);
+			}	
+			pop(&tokenStk);
+		} else if(*pMove == '.') {
+//			nfa = unonAllFA(&stateNum);
+//			push(&nfaStk, nfa);						
 		}
-		nfaTmp = NULL;
 	}
 	return nfa;
 }
 
-**/
 
 Array *delta(FANode *node, char value) {
 	if( node == NULL) {
@@ -1731,11 +1733,34 @@ void testList() {
 	printf("\n");
 }
 
+typedef struct {
+	int *val;
+} Integer;
+
+void testQueue() {
+	Stack *stk = NULL;
+	int a[] = {4,3,2,5,6,4,3,4,656,78,5,3,1};
+	int size = sizeof(a)/sizeof(a[0]);
+	int i;
+	for(i=0;i<size;i++) {
+		Integer *it = (Integer*)malloc(sizeof(Integer));
+		it->val = &a[i];
+		pushStk(&stk, it);
+	}
+	Element *t = top(stk);
+	while(t != NULL) {
+		Integer *it = (Integer*)(t->val);
+		printf("%d,", *it->val);
+		pop(&stk);
+		t = top(stk);
+	}
+}
+
 int main(void) {
-	test();
+//	test();
 //	testMap();
 //	testArray();
-//	testQueue();
+	testQueue();
 //testQuicksort();
 //testFA();
 
