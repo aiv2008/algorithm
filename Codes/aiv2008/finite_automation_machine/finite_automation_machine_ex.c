@@ -832,9 +832,22 @@ FA *reg2NFAEx(char *p) {
 			}	
 			pop(&tokenStk);
 		} else if(*pMove == '.') {
-//			nfa = unonAllFA(&stateNum);
-//			push(&nfaStk, nfa);						
+			nfa = unonAllFA(&stateNum);
+			push(&nfaStk, nfa);						
+			Element *tmpTop = top(tokenStk);
+			char *c = tmpTop->val;
+			if(*c != '(') {
+				char addChar = '-';
+				push(&tokenStk, &addChar);
+			}
+		} else {
+			nfa = symbolFA(pMove, &stateNum) ;
+			stateNum++;
+			char addChar = '-';
+			push(&tokenStk, &addChar);
+			push(&nfaStk, nfa);
 		}
+		pMove++;
 	}
 	return nfa;
 }
