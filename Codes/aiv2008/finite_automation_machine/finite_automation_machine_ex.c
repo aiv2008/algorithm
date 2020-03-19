@@ -776,9 +776,10 @@ FA *reg2NFAEx(char *p) {
 	Array *array = NULL;
 	Stack *tokenStk = NULL;
 	Stack *nfaStk = NULL;
+	Stack *strStk = NULL;
 //	Queue *concatQue = NULL;
 	int stateNum = 0;
-	int origValue = 1;
+//	int origValue = 1;
 	//先加入一个epsilon，以匹配空串
 	if(*p=='\0'){
 	//nfa = epsilonFA(&stateNum) ;
@@ -789,51 +790,70 @@ FA *reg2NFAEx(char *p) {
 	//是否已包含所有字母表里的字母， 因为当模式里含有'.'时， 即包含字母表的所有字母
 	while(*pMove != '\0') {
 		if(*pMove == '*') {
-			printf("---aaaa\n");
-			Element *t = top(nfaStk);
-			FA *tmpFA = (FA*)(t->val);
-			nfa = kleenStarFA(tmpFA, &stateNum) ;
-			pop(&nfaStk);
+			printf("---* state---\n");
+			Element *strStkTop = top(strStk);
+			if(strStktop != NULL) {
+				nfa = symbolFA(pMove, &stateNum);
+				stateNum++;
+				nfa = kleen(nfa, &stateNum) ;
+				stateNum++;
+				pop(&strStk);
+				strStkTop = top(strStk);
+				while(strStkTop != NULL) {
+					FA* newFA = symbolFA(strStkTop->val, &stateNum);
+					stateNum++;
+					nfa = concatFA(newFA, nfa);
+					pop(&strStk);
+					strStkTop = top(strStk);
+				}
+			} else {
+				Element *t = top(nfaStk);
+				FA *tmpFA = (FA*)(t->val);
+				nfa = kleenStarFA(tmpFA, &stateNum) ;
+				pop(&nfaStk);
+				//pushStk(&nfaStk, nfa);
+				//iterateNFA((FA*)(((Element*)(top(nfaStk)))->val));
+				stateNum++;
+			}
 			pushStk(&nfaStk, nfa);
-			//iterateNFA(nfa);		
-			stateNum++;
 		} else if(*pMove == '|') {
-			printf("---bbbb\n");
+			printf("---| state---\n");
+/**
 			Element *tmpTop = top(tokenStk);
-			char *c = tmpTop->val;
-			printf("c=%c\n", *c);
-			while(*c == '-') {
+			while(tmpTop != NULL && *tmpTop->val == '-') {
 				Element *tmpNFATop = top(nfaStk);
 				FA *tmpTopFA = (FA*)(tmpNFATop->val);
 				tmpNFATop = tmpNFATop->next;
 				FA *tmpBotFA = (FA*)(tmpNFATop->val);
 				nfa = concatFA(tmpBotFA, tmpTopFA);
 				pop(&nfaStk);
-				Element *testTop = top(tokenStk);
-				char *tc = testTop->val;
-				printf("%c,", *tc);
 				pop(&tokenStk);
 				tmpTop = top(tokenStk);
-				c = tmpTop->val;
 			}
-			printf("\n");
-			//iterateNFA((FA*)(((Element*)(top(nfaStk)))->val));
-			//iterateNFA(nfa);
+**/
+			Element *strStkTop = top(strStk);
+			while(strStkTop != NULL) {
+				FA* newFA = symbolFA(strStkTop->val, &stateNum);
+				stateNum++;
+				nfa = concatFA(newFA, nfa);
+				pop(&strStk);
+				strStkTop = top(strStk);
+			}
 			pushStk(&tokenStk, pMove);
 		} else if(*pMove == '(') {
+			printf("---( state---\n");
 			Element *t = top(tokenStk);
 			if(t != NULL && (*t->val == '-' || *t->val == ')' || *t->val == '.')) {
 				char addChar = '-';
 				pushStk(&tokenStk, &addChar);
+				printf("%c\n", *((Element*)(top(tokenStk)))->val);
 			}
-			printf("---cccc\n");
-			//iterateNFA(nfa);		
 			pushStk(&tokenStk, pMove);
 		} else if(*pMove == ')') {
-			printf("---dddd\n");
+			printf("---) state---\n");
 			Element *tmpTop = top(tokenStk);
-			char *c = tmpTop->val;
-			while(*c != '(') {
+			while(tmpTop != NULL && *tmpTop->val != '(') {
+				char *c = tmpTop->val;
 				if(*c == '-') {
 					Element *tmpNFATop = top(nfaStk);
 					FA *tmpTopFA = (FA*)(tmpNFATop->val);
@@ -849,21 +869,20 @@ FA *reg2NFAEx(char *p) {
 					stateNum++;
 				}
 				pop(&nfaStk);
-				Element *testTop = top(tokenStk);
-				char *tc = testTop->val;
-				printf("%c,", *tc);
+				//Element *testTop = top(tokenStk);
+				//char *tc = testTop->val;
+				//printf("%c,", *tc);
 				pop(&tokenStk);
 				tmpTop = top(tokenStk);
-				c = tmpTop->val;
 			}
-			printf("\n");
-			//iterateNFA(nfa);		
-			Element *testTop = top(tokenStk);
-			char *tc = testTop->val;
-			printf("%c\n", *tc);
+		//	printf("\n");
+			//iterateNFA((FA*)(((Element*)(top(nfaStk)))->val));
+			//Element *testTop = top(tokenStk);
+			//char *tc = testTop->val;
+			//printf("%c\n", *tc);
 			pop(&tokenStk);
 		} else if(*pMove == '.') {
-			printf("---eeee\n");
+			printf("---. state---\n");
 			nfa = unonAllFA(&stateNum);
 			stateNum++;
 			pushStk(&nfaStk, nfa);						
@@ -872,30 +891,36 @@ FA *reg2NFAEx(char *p) {
 				char addChar = '-';
 				pushStk(&tokenStk, &addChar);
 			}
-			//iterateNFA(nfa);		
+			//iterateNFA((FA*)(((Element*)(top(nfaStk)))->val));
 		} else {
-			printf("---fffff\n");
+			printf("---character state---\n");
+/**
 			nfa = symbolFA(pMove, &stateNum) ;
 			stateNum++;
 			Element *t = top(nfaStk);
 			if(t!=NULL) {
 				Element *tmpTop = top(tokenStk);
 				//char *c = tmpTop->val;
-				if(tmpTop == NULL || (  tmpTop != NULL &&  *tmpTop->val != '|' && *tmpTop->val != '(')) {
+				if(tmpTop == NULL || (  tmpTop != NULL && *tmpTop->val != '(')) {
 					char addChar = '-';
-					printf("--push token---\n");
+					//printf("--push token---\n");
 					pushStk(&tokenStk, &addChar);
 				}
 			}
-			//iterateNFA(nfa);		
 			pushStk(&nfaStk, nfa);
+**/
+			pushStk(&strStk, pMove);
 		}
+
+		if(top(tokenStk) != NULL) printf("%c\n", *((Element*)(top(tokenStk)))->val);
+		if(top(nfaStk) != NULL) iterateNFA((FA*)(((Element*)(top(nfaStk)))->val));
+		printf("\n");
 		pMove++;
 	}
 
+printf("---begin print remain ----\n");
 	Element *tmpTop = top(tokenStk);
 	Element *t = top(nfaStk);
-/**
 	printf("\n");
 	while(tmpTop != NULL) {
 		char *c = tmpTop->val;
@@ -911,9 +936,9 @@ FA *reg2NFAEx(char *p) {
 	}
 	printf("\n");
 
+/**
 	tmpTop = top(tokenStk);
 	t = top(nfaStk);
-**/
 	printf("---print remain stack---\n");
 	while(tmpTop != NULL) {
 			printf("---ggggg\n");
@@ -925,17 +950,19 @@ FA *reg2NFAEx(char *p) {
 		if(*c == '-') {
 			Element *tmpNFATop = top(nfaStk);
 			FA *tmpTopFA = (FA*)(tmpNFATop->val);
+			iterateNFA(tmpTopFA);
 			tmpNFATop = tmpNFATop->next;
 			FA *tmpBotFA = (FA*)(tmpNFATop->val);
+			iterateNFA(tmpBotFA);
 			nfa = concatFA(tmpBotFA, tmpTopFA);
-	//		iterateNFA(nfa);
+	//		iterateNFA((FA*)(((Element*)(top(nfaStk)))->val));
 		} else if(*c == '|') {
 			Element *tmpNFATop = top(nfaStk);
 			FA *tmpTopFA = (FA*)(tmpNFATop->val);
 			tmpNFATop = tmpNFATop->next;
 			FA *tmpBotFA = (FA*)(tmpNFATop->val);
 			nfa = unonFA(tmpBotFA, tmpTopFA, &stateNum);
-	//		iterateNFA(nfa);
+		//	iterateNFA((FA*)(((Element*)(top(nfaStk)))->val));
 			stateNum++;
 		}
 		pop(&nfaStk);
@@ -944,6 +971,7 @@ FA *reg2NFAEx(char *p) {
 		t = top(nfaStk);
 	}
 	
+**/
 	return nfa;
 }
 
@@ -1700,9 +1728,9 @@ void mergeDFA(Array/**Array<FANode>**/ *array) {
 }
 
 void testFA() {
-	char *p = "cd(a|b)*ef";		
+	char *p = "cd(a|b)*|ef";		
 	FA *nfa = reg2NFAEx(p);
-	iterateNFA(nfa);
+//	iterateNFA(nfa);
 //	FA *dfa = nfa2DFA(nfa);
 //	iterateDFA(dfa->start);
 //	minimalDFA(dfa);
