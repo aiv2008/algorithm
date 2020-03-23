@@ -805,6 +805,8 @@ FA *reg2NFAEx(char *p) {
 		if(*pMove == '*') {
 			printf("---* state---\n");
 			Element *verifyTop = top(verifyStk);
+			if(verifyStk == NULL) printf("verifystk is null\n");
+			iterateStack(verifyStk);
 			if(verifyTop == NULL || *verifyTop->val == true) {
 				printf("there cannot be a token before '*'\n");
 				return NULL;
@@ -825,32 +827,26 @@ FA *reg2NFAEx(char *p) {
 				printf("there cannot be a token before '|'\n");
 				return NULL;
 			}
-			Element *tmpTop = top(tokenStk);
-		//	while(tmpTop != NULL && *tmpTop->val == '-') {
-			while(verifyTop->next != NULL && *((Element*)(verifyTop->next))->val == false) {
-				Element *tmpNFATop = top(nfaStk);
-				FA *tmpTopFA = (FA*)(tmpNFATop->val);
-				//iterateNFA(tmpTopFA);
-				tmpNFATop = tmpNFATop->next;
-				FA *tmpBotFA = (FA*)(tmpNFATop->val);
-				//iterateNFA(tmpBotFA);
-				nfa = concatFA(tmpBotFA, tmpTopFA);
+			while(verifyTop != NULL) {
+				if(*verifyTop->val == true || verifyTop->next == NULL ) break;
+				Element *verifyNextE = verifyTop->next;
+				if(*verifyNextE->val == true) break;
+				Element *eTop = top(nfaStk);
+				Element *eBot = eTop->next;
+				FA *nfaTop = (FA*)(eTop->val);
+				FA *nfaBot = (FA*)(eBot->val);
+				concatFA(nfaBot, nfaTop);
 				pop(&nfaStk);
-				pop(&tokenStk);
-				tmpTop = top(tokenStk);
-				//printf("---befor pop---\n");
-				//iterateStack(verifyStk);
 				pop(&verifyStk);
-				//printf("---after pop---\n");
-				//iterateStack(verifyStk);
 				verifyTop = top(verifyStk);
 			}
+			
+		//		Element *eTop = top(nfaStk);
+		//		FA *nfaTop = (FA*)(eTop->val);
+		//		iterateNFA(nfaTop);
 			pushStk(&tokenStk, pMove);
-			//printf("---befor push---\n");
-			//iterateStack(verifyStk);
 			pushStk(&verifyStk, &tVal);
-			//printf("---after push---\n");
-			//iterateStack(verifyStk);
+			iterateStack(verifyStk);
 		} else if(*pMove == '(') {
 			printf("---( state---\n");
 			pushStk(&tokenStk, pMove);
@@ -861,74 +857,59 @@ FA *reg2NFAEx(char *p) {
 			//iterateStack(verifyStk);
 		} else if(*pMove == ')') {
 			printf("---) state---\n");
+	//		iterateStack(verifyStk);
 			Element *verifyTop = top(verifyStk);
 			if(verifyTop == NULL || *verifyTop->val == true) {
-				printf("there cannot be a token before ')'\n");
+				printf("there cannot be a token in the end\n");
 				return NULL;
 			}
-			Element *tmpTop = top(tokenStk);
-			//while(tmpTop != NULL && *tmpTop->val != '(') {
-			while(verifyTop != NULL && (*verifyTop->val == false || (!*verifyTop->val == true && *tmpTop->val != '(') )) {	
-				char *cTop = verifyTop->val;
-				char *c = ((Element*)(verifyTop->next))->val;
-				if(*c == false) {
-					Element *tmpNFATop = top(nfaStk);
-					FA *tmpTopFA = (FA*)(tmpNFATop->val);
-					tmpNFATop = tmpNFATop->next;
-					FA *tmpBotFA = (FA*)(tmpNFATop->val);
-					nfa = concatFA(tmpBotFA, tmpTopFA);
-					//printf("---befor pop---\n");
-					//iterateStack(verifyStk);
-					pop(&verifyStk);
-					pop(&verifyStk);
-					//printf("---after pop---\n");
-					//iterateStack(verifyStk);
-					pop(&nfaStk);
-				} else {
-					if(*tmpTop->val != '|') {
-						printf("failed: token is not '|'\n", *tmpTop->val);
-						return NULL;
-					}
-					Element *tmpNFATop = top(nfaStk);
-					FA *tmpTopFA = (FA*)(tmpNFATop->val);
-					tmpNFATop = tmpNFATop->next;
-					FA *tmpBotFA = (FA*)(tmpNFATop->val);
-					//printf("print top fa\n");
-					//iterateNFA(tmpTopFA);
-					//printf("\n");
-					//printf("print bot fa\n");
-					//iterateNFA(tmpBotFA);
-					//printf("\n");
-					nfa = unonFA(tmpBotFA, tmpTopFA, &stateNum);
+			while(verifyTop != NULL ) {
+				Element *tokenTopE = top(tokenStk);
+				//iterateStack(verifyStk);
+				if(*verifyTop->val == true || *tokenTopE->val == '(') {
+					printf("enter here \n");
+					break;
+				}
+				if(verifyTop->next == NULL) break;
+				Element *verifyNextE = verifyTop->next;
+				//只有‘|’符号
+				if(*verifyNextE->val == true) {
+					printf("aaa\n");
+					Element *eTop = top(nfaStk);
+					Element *eBot = eTop->next;
+					FA *nfaTop = (FA*)(eTop->val);
+					iterateNFA(nfaTop);
+					FA *nfaBot = (FA*)(eBot->val);
+					nfa = unonFA(nfaBot, nfaTop, &stateNum);
 					stateNum++;
-					//printf("---befor pop---\n");
-					//iterateStack(verifyStk);
-					pop(&verifyStk);
-					pop(&verifyStk);
-					pop(&verifyStk);
-					//printf("---after pop---\n");
-					//iterateStack(verifyStk);
 					pop(&nfaStk);
 					pop(&tokenStk);
-					//pop(&nfaStk);
+					pop(&verifyStk);
+					pop(&verifyStk);
+					pop(&verifyStk);
+				} else {
+					printf("bbb\n");
+					Element *eTop = top(nfaStk);
+					Element *eBot = eTop->next;
+					FA *nfaTop = (FA*)(eTop->val);
+					FA *nfaBot = (FA*)(eBot->val);
+					iterateNFA(nfaTop);
+					nfa = concatFA(nfaBot, nfaTop);
+					pop(&nfaStk);
+					pop(&verifyStk);
+					pop(&verifyStk);
 				}
+				pushStk(&verifyStk, &fVal);
 				verifyTop = top(verifyStk);
 			}
-
+			//弹出‘(’
 			Element *tmpNFATop = top(nfaStk);
 			FA *tmpTopFA = (FA*)(tmpNFATop->val);
-			//iterateNFA(tmpTopFA);
+			iterateNFA(tmpTopFA);
 			pop(&tokenStk);
-			//printf("---befor pop---\n");
-			//iterateStack(verifyStk);
 			pop(&verifyStk);
-			//printf("---after pop---\n");
-			//iterateStack(verifyStk);
-			//printf("---befor push---\n");
-			//iterateStack(verifyStk);
-			pushStk(&verifyStk, &fVal);
-			//printf("---after push---\n");
-			//iterateStack(verifyStk);
+			pop(&verifyStk);
+			pushStk(&verifyStk, &fVal); 
 		} else if(*pMove == '.') {
 			printf("---. state---\n");
 			nfa = unonAllFA(&stateNum);
@@ -979,68 +960,40 @@ FA *reg2NFAEx(char *p) {
 	printf("\n");
 **/
 
-			Element *verifyTop = top(verifyStk);
-			if(verifyTop == NULL || *verifyTop->val == true) {
-				printf("there cannot be a token before ')'\n");
-				return NULL;
-			}
-			Element *tmpTop = top(tokenStk);
-			//while(tmpTop != NULL && *tmpTop->val != '(') {
-			while(verifyTop != NULL && (*verifyTop->val == false || (!*verifyTop->val == true && *tmpTop->val != '(') )) {	
-				//char *c = tmpTop->val;
-				char *cTop = verifyTop->val;
-				//char *c = verifyTop->val;
-				char *c = ((Element*)(verifyTop->next))->val;
-				printf("%c\n", *c);
-				if(*c == false) {
-					Element *tmpNFATop = top(nfaStk);
-					FA *tmpTopFA = (FA*)(tmpNFATop->val);
-			//		iterateNFA(tmpTopFA);
-					tmpNFATop = tmpNFATop->next;
-					FA *tmpBotFA = (FA*)(tmpNFATop->val);
-					nfa = concatFA(tmpBotFA, tmpTopFA);
-		//			iterateNFA(nfa);
-		//			printf("---befor pop---\n");
-		//			iterateStack(verifyStk);
-					pop(&verifyStk);
-		//			pop(&verifyStk);
-		//			printf("---after pop---\n");
-		//			iterateStack(verifyStk);
-					pop(&nfaStk);
-					//pop(&nfaStk);
-				} else {
-					if(*tmpTop->val != '|') {
-						printf("failed: token is not '|'\n", *tmpTop->val);
-						return NULL;
-					}
-					Element *tmpNFATop = top(nfaStk);
-					FA *tmpTopFA = (FA*)(tmpNFATop->val);
-					iterateNFA(tmpTopFA);
-					tmpNFATop = tmpNFATop->next;
-					FA *tmpBotFA = (FA*)(tmpNFATop->val);
-		//			printf("print top fa\n");
-		//			iterateNFA(tmpTopFA);
-		//			printf("\n");
-		//			printf("print bot fa\n");
-		//			iterateNFA(tmpBotFA);
-		//			printf("\n");
-					nfa = unonFA(tmpBotFA, tmpTopFA, &stateNum);
-		//			iterateNFA(nfa);
-					stateNum++;
-		//			printf("---befor pop---\n");
-		//			iterateStack(verifyStk);
-					pop(&verifyStk);
-					pop(&verifyStk);
-		//			pop(&verifyStk);
-		//			printf("---after pop---\n");
-		//			iterateStack(verifyStk);
-					pop(&nfaStk);
-					pop(&tokenStk);
-					//pop(&nfaStk);
-				}
-				//pushStk(&verifyStk, nfa);
-				verifyTop = top(verifyStk);
-			}
+	Element *verifyTop = top(verifyStk);
+	if(verifyTop == NULL || *verifyTop->val == true) {
+		printf("there cannot be a token in the end\n");
+		return NULL;
+	}
+	while(verifyTop != NULL) {
+		if(verifyTop->next == NULL) break;
+		Element *verifyNextE = verifyTop->next;
+		char *verifyNextChar = verifyNextE->val;
+		//只有‘|’符号
+		if(*verifyNextE->val == true) {
+			Element *eTop = top(nfaStk);
+			Element *eBot = eTop->next;
+			FA *nfaTop = (FA*)(eTop->val);
+			FA *nfaBot = (FA*)(eBot->val);
+			nfa = unonFA(nfaBot, nfaTop, &stateNum);
+			stateNum++;
+			pop(&nfaStk);
+			pop(&tokenStk);
+			pop(&verifyStk);
+			pop(&verifyStk);
+		} else {
+			Element *eTop = top(nfaStk);
+			Element *eBot = eTop->next;
+			FA *nfaTop = (FA*)(eTop->val);
+			FA *nfaBot = (FA*)(eBot->val);
+			nfa = concatFA(nfaBot, nfaTop);
+			pop(&nfaStk);
+			pop(&verifyStk);
+		}
+		verifyTop = top(verifyStk);
+	}
+	iterateNFA(nfa);
+
 	return nfa;
 }
 
@@ -1797,8 +1750,9 @@ void mergeDFA(Array/**Array<FANode>**/ *array) {
 }
 
 void testFA() {
-	//char *p = "cd(jga|hib)*|ef";		
-	char *p = "jpa|hib";
+//	char *p = "cd(jga|hib)*|ef";	
+	char *p = "if|else|then";	
+	//char *p = "jpa|hib";
 	FA *nfa = reg2NFAEx(p);
 //	iterateNFA(nfa);
 //	FA *dfa = nfa2DFA(nfa);
