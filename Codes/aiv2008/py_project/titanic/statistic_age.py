@@ -50,25 +50,28 @@ print("length of age array is", len(age_array))
 
 step = 2/3
 age_array.sort(axis=0, kind='quicksort')
-print(age_array)
+#print(age_array)
 i = 0
 age_list = []
 print("last element of age array is", age_array[713])
 #age_count_list
 if len(age_array) > 0:
 	print("type of age array 0 is",type(age_array[0]))
-	age_list.append(1)
+	age_list.append(0)
 	j = age_array[0] + step
 	while j <= age_array[len(age_array)-1]:
 		if i >= len(age_array):
 			break
-		print("value of j is ", j, "value of i is", i)
+		print("value of j is ", j, "value of age_array is", age_array[i])
 		if age_array[i] < j:
 			age_list[len(age_list)-1] = age_list[len(age_list)-1] + 1
+			i = i + 1
 		else:
 			j = j + step
-			age_list.append(1)
-		i = i + 1
+			while age_array[i] > j:
+				j = j + step
+			age_list.append(0)
+		#i = i + 1
 	if i < len(age_array):
 		age_list[len(age_list)-1] = age_list[len(age_list)-1] + 1
 		i = i = 1
