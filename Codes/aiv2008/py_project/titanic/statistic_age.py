@@ -43,13 +43,16 @@ def get_hd(class_list):
 
 #calculate the  entropy of the data frame, the feature of X is 'Fare', 'Parch', 'SibSp', 'Pclass', the output feature is 'Age'
 def cal_entropy(df):
-	known_age_df = df[df.Age.notnull()]
-	print("type of known age is", type(known_age_df))
+	#df.sort_values(by='Age', ascending=False)
+	#print(df)
+	known_age_df = df[df.Age.notnull()].sort_values(by='Age', kind='quicksort', ascending=True)
+	#print("type of known age is", type(known_age_df))
 	#return the numpy array with the condition of age which is not null
 	known_age_array = df[df.Age.notnull()].to_numpy()
 	#return the numpy array with the condition of age which is  null
 	unknown_age_array = df[df.Age.isnull()].to_numpy()
-	known_age_df.sort_values(by='Age', kind='quicksort', ascending=True)
+	#print(known_age_df.info())
+	#print(known_age_df.describe())
 	print(known_age_df)
 
 #print(data_train.describe())
