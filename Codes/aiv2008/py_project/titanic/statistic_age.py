@@ -69,18 +69,56 @@ plt.ylabel(u"密度")
 #age_df = data_train[['Age']]
 #age_array = data_train[['Age']].Age.notnull().as_matrix()
 
+
+
+def get_cls_list(np_array, step):
+	i = 0
+	result_list = []
+	#print("last element of age array is", np_array[713])
+	#age_count_list
+	if len(np_array) > 0:
+		print("type of age array 0 is",type(np_array[0]))
+		result_list.append(0)
+		j = np_array[0] + step
+		while j <= np_array[len(np_array)-1]:
+			if i >= len(np_array):
+				break
+			print("value of j is ", j, "value of np_array is", np_array[i])
+			if np_array[i] < j:
+				result_list[len(result_list)-1] = result_list[len(result_list)-1] + 1
+				i = i + 1
+			else:
+				j = j + step
+				while np_array[i] > j:
+					j = j + step
+				result_list.append(0)
+			#i = i + 1
+		if i < len(np_array):
+			result_list[len(result_list)-1] = result_list[len(result_list)-1] + 1
+			i = i + 1
+		print("length of age list is:\n")
+		print(len(result_list))
+		print("age list is:\n")
+		print(result_list)
+
+		i=0
+		total_count=0
+		for i in range(len(result_list)):
+			total_count = total_count + result_list[i]
+		print("total count is:\n")
+		print(total_count)
+	else:
+		print("age list is null")
+	return result_list
+
+'''
 def get_cls_list(data_train, pty):
 
-	#age_df = data_train[['Age']]
 	age_df = data_train[[pty]]
 	    # 乘客分成已知年龄和未知年龄两部分
-	#age_array = age_df[age_df.Age.notnull()].as_matrix()
 	age_array = age_df[age_df[pty].notnull()].as_matrix()
 	print("known age is \n",  len(age_array))
 
-	#print(type(serise))
-	#print(type(age_df))
-	#print(type(age_array))
 	print("length of age array is", len(age_array))
 
 	step = 2/3
@@ -89,7 +127,6 @@ def get_cls_list(data_train, pty):
 	i = 0
 	age_list = []
 	print("last element of age array is", age_array[713])
-	#age_count_list
 	if len(age_array) > 0:
 		print("type of age array 0 is",type(age_array[0]))
 		age_list.append(0)
@@ -106,7 +143,6 @@ def get_cls_list(data_train, pty):
 				while age_array[i] > j:
 					j = j + step
 				age_list.append(0)
-			#i = i + 1
 		if i < len(age_array):
 			age_list[len(age_list)-1] = age_list[len(age_list)-1] + 1
 			i = i + 1
@@ -124,7 +160,7 @@ def get_cls_list(data_train, pty):
 	else:
 		print("age list is null")
 	return age_list
-
+'''
 
 		
 if __name__ == '__main__':
