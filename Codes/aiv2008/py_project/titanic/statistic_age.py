@@ -41,35 +41,25 @@ def get_hd(class_list):
 	return -hd_val
 	#return total
 
-#calculate the  entropy of the data frame, the feature of X is 'Fare', 'Parch', 'SibSp', 'Pclass', the output feature is 'Age'
+#calculate the  entropy of the data frame, the feature of X is 'Fare', 'Parch', 'SibSp', 'Pclass', the output feature is 'Age', the order is
+#'Age','Pclass', 'SibSp','Parch','Fare'
 def cal_entropy(df):
-	#df.sort_values(by='Age', ascending=False)
-	#print(df)
-	known_age_df = df[df.Age.notnull()].sort_values(by='Age', kind='quicksort', ascending=True)
-	#print("type of known age is", type(known_age_df))
-	#return the numpy array with the condition of age which is not null
+	known_age_df = df[df.Age.notnull()].sort_values(by="Age", kind="quicksort", ascending=True)
 	known_age_array = df[df.Age.notnull()].to_numpy()
-	#return the numpy array with the condition of age which is  null
 	unknown_age_array = df[df.Age.isnull()].to_numpy()
-	#print(known_age_df.info())
-	#print(known_age_df.describe())
-	print(known_age_df)
-
-#print(data_train.describe())
-
-'''
-data_train.Age.plot(kind="kde")
-plt.title(u"年龄分布")
-plt.xlabel(u"年龄")
-plt.ylabel(u"密度")
-'''
-#plt.show()
-
-#serise = data_train.Age
-#age_df = data_train[['Age']]
-#age_array = data_train[['Age']].Age.notnull().as_matrix()
+	sorted_array = known_age_array[known_age_array[:,4].argsort()]
 
 
+	#显示所有列
+	pd.set_option('display.max_columns', None)
+	#显示所有行
+	pd.set_option('display.max_rows', None)
+	#设置value的显示长度为100，默认为50
+	pd.set_option('max_colwidth',5000)
+	pd.set_option('expand_frame_repr', False)
+ 
+	print(sorted_array)	
+	#print(known_age_df)
 
 def get_cls_list(np_array, step):
 	i = 0
@@ -111,61 +101,20 @@ def get_cls_list(np_array, step):
 		print("age list is null")
 	return result_list
 
-'''
-def get_cls_list(data_train, pty):
-
-	age_df = data_train[[pty]]
-	    # 乘客分成已知年龄和未知年龄两部分
-	age_array = age_df[age_df[pty].notnull()].as_matrix()
-	print("known age is \n",  len(age_array))
-
-	print("length of age array is", len(age_array))
-
-	step = 2/3
-	age_array.sort(axis=0, kind='quicksort')
-	#print(age_array)
-	i = 0
-	age_list = []
-	print("last element of age array is", age_array[713])
-	if len(age_array) > 0:
-		print("type of age array 0 is",type(age_array[0]))
-		age_list.append(0)
-		j = age_array[0] + step
-		while j <= age_array[len(age_array)-1]:
-			if i >= len(age_array):
-				break
-			print("value of j is ", j, "value of age_array is", age_array[i])
-			if age_array[i] < j:
-				age_list[len(age_list)-1] = age_list[len(age_list)-1] + 1
-				i = i + 1
-			else:
-				j = j + step
-				while age_array[i] > j:
-					j = j + step
-				age_list.append(0)
-		if i < len(age_array):
-			age_list[len(age_list)-1] = age_list[len(age_list)-1] + 1
-			i = i + 1
-		print("length of age list is:\n")
-		print(len(age_list))
-		print("age list is:\n")
-		print(age_list)
-
-		i=0
-		total_count=0
-		for i in range(len(age_list)):
-			total_count = total_count + age_list[i]
-		print("total count is:\n")
-		print(total_count)
-	else:
-		print("age list is null")
-	return age_list
-'''
-
 		
-if __name__ == '__main__':
+if __name__ == "__main__":
 	data_train = pd.read_csv("data/train.csv")
-	age_df = data_train[['Age','Pclass', 'SibSp','Parch','Fare']]
+	#显示所有列
+	pd.set_option('display.max_columns', None)
+	#显示所有行
+	pd.set_option('display.max_rows', None)
+	#设置value的显示长度为100，默认为50
+	pd.set_option('max_colwidth',5000)
+	pd.set_option('expand_frame_repr', False)
+	tp_array = ["Age", "Pclass", "SibSp", "Parch", "Fare"]
+#	dtype = np.dtype([("Age","S10"), ("Pclass","S10"), ("SibSp","S10"), ("Parch","S10"), ("Fare","S10")])
+#	age_df = data_train[['Age','Pclass', 'SibSp','Parch','Fare']]
+	age_df = data_train[tp_array]
 	cal_entropy(age_df)
 	#print(data_train.describe())
 	#result_list = get_cls_list(data_train, 'Age')
