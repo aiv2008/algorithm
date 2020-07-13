@@ -19,9 +19,13 @@ int uniquePathsWithObstacles(int** obstacleGrid, int obstacleGridSize, int* obst
 	int i;
 	int j;
 	int dp[*obstacleGridColSize];
+	//dp[0] = 1;
 	for(i=0;i<*obstacleGridColSize;i++) {
 		if(*(*obstacleGrid+i) == 1) dp[i] = 0;
-		else dp[i] = 1;
+		else {
+			if(i==0) dp[i] = 1;
+			else dp[i] = dp[i-1];
+		}
 	}
 
 	for(i=0;i<*obstacleGridColSize;i++) {
@@ -50,9 +54,9 @@ int uniquePathsWithObstacles(int** obstacleGrid, int obstacleGridSize, int* obst
 }
 
 int main(void){
-	int m = 3;
-	int n = 3;
-	int a[][3] = {{0,0,0},{0,1,0},{0,0,0}};
+	int m = 1;
+	int n = 2;
+	int a[][2] = {{1,0}};
 	int** b = (int**)calloc(m, sizeof(int*));
 	//int rowSize = sizeof(a)/sizeof(a[0]);
 	printf("m=%d\n", m);
