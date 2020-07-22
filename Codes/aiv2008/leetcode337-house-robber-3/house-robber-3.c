@@ -1,22 +1,15 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include "../common/vector.h"
+#include "../common/tree.h"
 
 /**
- * Definition for a binary tree node.
- * struct TreeNode {
- *     int val;
- *     struct TreeNode *left;
- *     struct TreeNode *right;
- * };
- */
-
-
 typedef struct {
 	int val;
 	struct TreeNode *left;
 	struct TreeNode *right;
 } TreeNode; 
-
+**/
 
 typedef struct{
 	char* val;
@@ -28,17 +21,20 @@ typedef struct{
 	struct StackNode* bottom;
 } Stack;
 
-
+/**
 typedef struct{
 	int size;
 	int capacity;
 	char** element;
 } Vector;
+**/
+
 
 int max(int a, int b){
 	return a > b ? a : b;
 }
 
+/**
 void vectorAdd(Vector** vector, char* element){
 	if(vector == NULL) return;
 	if(*vector == NULL) {
@@ -66,6 +62,7 @@ char* vectorGet(Vector* vector, int index){
 int vectorSize(Vector* vector) {
 	return vector == NULL ? 0 : vector->size;
 }
+**/
 
 int *postTrasval(TreeNode* node) {
 	int *dp = (int*)calloc(2, sizeof(int));
@@ -93,11 +90,13 @@ int rob(struct TreeNode* root){
 	return max(*result, *(result+1));
 }
 
+/**
 TreeNode* initTreeNode( int val){
 	TreeNode* node = (TreeNode*)malloc(sizeof(TreeNode));
 	node->val = val;
 	return node;
 }
+**/
 
 
 int main(void){
