@@ -8,10 +8,11 @@ void vectorAdd(Vector** vector, char* element){
                  *vector = (Vector*)malloc(sizeof(Vector));
                  (*vector)->element = (char**)calloc(8, sizeof(char*));
                  (*vector)->capacity = 8;
+		(*vector)->size = 0;
          }
          if((*vector)->size == (*vector)->capacity) {
                  int capacity = (*vector)->capacity;
-                 (*vector)->capacity = capacity + capacity >> 1;
+                 (*vector)->capacity = capacity + capacity << 1;
                  char** newElement = (char**)calloc((*vector)->capacity, sizeof(char*));
                  memcpy(newElement, (*vector)->element, (*vector)->size*sizeof(char*));
                  free((*vector)->element);

@@ -3,24 +3,56 @@
 #include"../common/vector.h"
 #include"../common/tree.h"
 
+/**
+typedef struct {
+        int size;
+        int capacity;
+        char** element;
+} Vector;
+
+
+void vectorAdd(Vector** vector, char* element){
+        if(vector == NULL) return;
+        if(*vector == NULL) {
+                *vector = (Vector*)malloc(sizeof(Vector));
+                (*vector)->element = (char**)calloc(8, sizeof(char*));
+                (*vector)->capacity = 8;
+		(*vector)->size = 0;
+        }
+        if((*vector)->size == (*vector)->capacity) {
+                int capacity = (*vector)->capacity;
+                (*vector)->capacity = capacity + capacity << 1;
+                char** newElement = (char**)calloc((*vector)->capacity, sizeof(char*));
+                memcpy(newElement, (*vector)->element, (*vector)->size*sizeof(char*));
+                free((*vector)->element);
+                (*vector)->element = newElement;
+        }
+        *((*vector)->element + (*vector)->size) = element;
+        (*vector)->size++;
+}
+
+char* vectorGet(Vector* vector, int index){
+        if(vector == NULL||index<0) return NULL;
+        return *(vector->element+index);
+}
+int vectorSize(Vector* vector) {
+         return vector == NULL ? 0 : vector->size;
+}
+**/
+
+void swap(int *a, int *b){
+	*a = *a ^ *b; 
+	*b = *a ^ *b; 
+	*a = *a ^ *b; 
+}
+
 
 void recoverTree(struct TreeNode* root){
-	//dfs(root);
+	Vector *vct = NULL;
+	inorderTraversal(root, &vct);
+	quicksort(vct, 0, vectorSize(vct)-1);
 }
 
-void swap(int *a, int *b) {
-	*a = *a + *b;
-	*b = *a - *b;
-	*a = *a - *b;
-}
-
-int max(int a, int b) {
-	return a > b ? a : b;
-}
-
-int min(int a, int b){
-	return a < b  ? a : b;
-}
 
 //中序遍历二叉树
 void inorderTraversal(struct TreeNode* root, Vector** vector){
@@ -33,16 +65,6 @@ void inorderTraversal(struct TreeNode* root, Vector** vector){
 void quicksort(Vector *vector, int startIndex, int endIndex) {
 	if(vector == NULL || endIndex - startIndex + 1 <= 1 ) return;
 	if(startIndex < endIndex) {
-		if(endIndex - startIndex + 1 == 2) {
-			struct TreeNode* startNode = (struct TreeNode*)vectorGet(vector, startIndex);
-			struct TreeNode* endNode = (struct TreeNode*)vectorGet(vector, endIndex);
-			if(startNode->val > endNode->val) {
-				startNode->val = startNode->val + endNode->val;
-				endNode->val = startNode->val - endNode->val;
-				startNode->val = startNode->val - endNode->val;
-			}
-			return;
-		}  
 		int midIndex = partition(vector, startIndex, endIndex);
 		printf("midIndex=%d\n", midIndex);
 		quicksort(vector, startIndex, midIndex-1);
@@ -60,35 +82,29 @@ int partition(Vector *vector, int startIndex, int endIndex) {
 	int j;
 	int a = 0;
 	int b = 0;
-	for(j=startIndex;j<endIndex-1;j++){
+	for(j=startIndex;j<endIndex;j++){
 		jNode = (struct TreeNode*)vectorGet(vector, j);
 		if(jNode->val <= node->val) {
 			iNode = (struct TreeNode*)vectorGet(vector, ++i);
 			//这里增加a，b两个变量， 是防止iNode==jNodeD的情况
 			a = iNode->val, b = jNode->val;
-			a = a + b;
-			b = a - b;
-			a = a - b;
+			swap(&a, &b);
+			//a = a + b;
+			//b = a - b;
+			//a = a - b;
 			iNode->val = a;
 			jNode->val = b;
 			
 		}
 	}
-	printf("i=%d, r=%d\n", i, endIndex);
 	iNode = (struct TreeNode*)vectorGet(vector, ++i);
-	printf("--begin print vector---\n");
-	printVector(vector);	
-	printf("---end print vector---\n");
-
 	a = iNode->val, b = node->val;
-	a = a + b;
-	b = a - b;
-	a = a - b;
+	swap(&a, &b);
+	//a = a + b;
+	//b = a - b;
+	//a = a - b;
 	iNode->val = a;
 	node->val = b;
-	printf("--begin print vector---\n");
-	printVector(vector);	
-	printf("---end print vector---\n");
 	return i;
 }
 
@@ -108,29 +124,9 @@ void printVector(Vector *vct){
 	}
 }
 
-/**
-void dfs(struct TreeNode* root){	
-	if(root == NULL ||(root->left == NULL && root->right == NULL)) return;
-	struct TreeNode* node = NULL;
-	if(root->left != NULL) {
-		node = root->left;
-		dfs(node);
-		//root->val = max(root->val, node->val);
-		//node->val = min(root->val, node->val);
-		if(root->val < node->val) swap(&root->val, &node->val);
-	}
-	if(root->right != NULL) {
-		node = root->right;
-		dfs(node);
-		//node->val = max(root->val, node->val);
-		//root->val = min(root->val, node->val);
-		if(root->val > node->val) swap(&root->val, &node->val);
-	}
-}
-**/
 
 int main(void) {
-	int a[] = {3,1,4,-1,-1,2};
+	int a[] = {10,5,15,0,8,13,20,2,-5,6,9,12,14,18,25};
 	int size = sizeof(a) / sizeof(a[0]);
         int i=0;
         int j=0;
@@ -141,9 +137,8 @@ int main(void) {
 	char flag = 'l';
         for(i=1;i<size;i++){
                 struct TreeNode* node = NULL;
-		if(a[i] > 0 ) {
+		if(a[i] != -1 ) {
 			node = initTreeNode(a[i]);
-                	//vectorAdd(&vector, node);
 		}
 		if(node == NULL) printf("null,");
 		else printf("%d,", node->val);
@@ -160,25 +155,19 @@ int main(void) {
         }
 	printf("\n");
 
-	//printf("---begin print tree---\n");
-	//treeIterator(root);	
-	//printf("---end print tree---\n");
+	recoverTree(root);
 
-	//printf("---befor quicksort---\n");
-	Vector *vct = NULL;
-	inorderTraversal(root, &vct);
-	//printVector(vct);
-	quicksort(vct, 0, vectorSize(vct)-1);
-	
-	//printf("---after quicksort---\n");
-	//printVector(vct);	
+	printf("---begin print tree2222---\n");
+	treeIterator(root);	
+	printf("---end print tree222---\n");
 
-//	recoverTree(root);
-
-	//printf("---begin print tree2222---\n");
-	//treeIterator(root);	
-	//printf("---end print tree222---\n");
-
+/**
+	int a = -2147483648;
+	int b = 1;
+	printf("a=%d, b=%d\n", a, b);
+	swap(&a, &b);
+	printf("a=%d, b=%d\n", a, b);
+**/
 
 	return 0;
 

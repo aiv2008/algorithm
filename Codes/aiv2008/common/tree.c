@@ -6,6 +6,8 @@
 struct TreeNode* initTreeNode( int val){
         struct TreeNode* node = (struct TreeNode*)malloc(sizeof(struct TreeNode));
         node->val = val;
+	node->left = NULL;
+	node->right = NULL;
         return node;
 }
 
