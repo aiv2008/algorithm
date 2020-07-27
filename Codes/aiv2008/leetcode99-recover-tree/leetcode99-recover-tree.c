@@ -48,9 +48,10 @@ void swap(int *a, int *b){
 
 
 void recoverTree(struct TreeNode* root){
-	Vector *vct = NULL;
-	inorderTraversal(root, &vct);
-	quicksort(vct, 0, vectorSize(vct)-1);
+	//Vector *vct = NULL;
+	//inorderTraversal(root, &vct);
+	//quicksort(vct, 0, vectorSize(vct)-1);
+	morrisPre(root);
 }
 
 
@@ -125,8 +126,44 @@ void printVector(Vector *vct){
 }
 
 
+
+void morrisPre(struct TreeNode* root) {
+	if(root == NULL) return;
+	struct TreeNode* cur = root;
+	struct TreeNode* mr = NULL;
+	while(cur != NULL) {
+		if(cur->left == NULL) cur = cur->right;
+		else{
+			mr = cur->left;
+//			if(cur->val < mr->val){
+//				swap(&cur->val, &mr->val);
+//			}
+			while(mr->right != NULL && mr->right != cur) {
+				struct TreeNode* right = (struct TreeNode*)(mr->right);
+//				if(mr->val > right->val) swap(&mr->val, &right->val);
+				mr = mr->right;
+			}
+			if(mr->right == cur) {
+				struct TreeNode* right = mr->right;
+				if(mr->val > right->val) swap(&mr->val, &right->val);
+				mr->right = NULL;
+				cur = cur->right;
+			} else {
+				mr->right = cur;
+				struct TreeNode* right = (struct TreeNode*)(mr->right);
+				if(right->val > cur->val) swap(&right->val, &cur->val);
+				struct TreeNode* left = cur->left;
+//				if(cur->left != NULL) 
+//					if(cur->val < left->val) swap(&cur->val, &left->val);
+				cur = cur->left;
+			}
+		}
+	}
+}
+
 int main(void) {
-	int a[] = {10,5,15,0,8,13,20,2,-5,6,9,12,14,18,25};
+	//int a[] = {10,5,15,0,8,13,20,2,-5,6,9,12,14,18,25};
+	int a[] = {3,1,4,-1,-1,2};
 	int size = sizeof(a) / sizeof(a[0]);
         int i=0;
         int j=0;
