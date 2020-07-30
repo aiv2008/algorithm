@@ -31,3 +31,16 @@ void vectorAdd(Vector** vector, char* element){
          return vector == NULL ? 0 : vector->size; 
 }
 
+void vectorDelete(Vector* vector, int index){
+	if(vector == NULL || index >= vectorSize(vector) || index < 0) return;
+	int i;
+	char* element = NULL;
+	for(i=index+1;i<vectorSize(vector);i++){
+		//element = vectorGet(vector, i-1);
+//		free(*(vector->element+i-1));
+		*(vector->element+i-1) = *(vector->element+i);
+	}
+//	free(*(vector->element+i-1));
+	*(vector->element+i-1) = NULL;
+	vector->size--;
+}

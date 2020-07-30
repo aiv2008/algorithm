@@ -22,5 +22,9 @@ char* vectorGet(Vector* vector, int index);
 **/
 int vectorSize(Vector* vector) ;
 
+/**
+**delete the ith element
+**/
+void vectorDelete(Vector* vector, int index);
 
 #endif
