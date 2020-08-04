@@ -52,56 +52,94 @@ void cVectorIterator(CVector* vector){
 	printf("\n");
 }
 
-//整形转换成字符型
-/**
-char* itoa(int i){
-	int a = i < 0 ? -i : i;
-	if(a/10) {
-		while(a){
-			
-		}	
-	}
-	
-}
-**/
 
 char* serialize(struct TreeNode* root) {
-	CVector *cVct = NULL;
-	cVectorAdd(&cVct , '[');	
-	
+	Vector *vector = NULL;
+	CVector *cvct = NULL;
+	//cVectorAdd(&cvct, '[');
 	if(root != NULL){
-		Vector* vector = NULL;
 		vectorAdd(&vector, root);
-		while(vectorSize(vector)) {
-			struct TreeNode* node = (struct TreeNode*)vectorGet(vector, 0);
-			cVectorAdd(&cVct, ',');
-			if(node == NULL) {
-				cVectorAdd(&cVct , 'n');	
-				cVectorAdd(&cVct , 'u');	
-				cVectorAdd(&cVct , 'l');	
-				cVectorAdd(&cVct , 'l');	
-			} else {
-				int r = node->val;
+		if(root->left != NULL)	vectorAdd(&vector, root->left);
+		if(root->right != NULL) vectorAdd(&vector, root->right);
+		int i;
+		for(i=1;i<vectorSize(vector);i++){
+			struct TreeNode* cur = (struct TreeNode*)vectorGet(vector, i);
+			if(cur->left != NULL) vectorAdd(&vector, cur->left);
+			if(cur->right != NULL) vectorAdd(&vector, cur->right);	
+		}
+		int size = vectorSize(vector);
+		//从尾开始，避免最后一个节点的左右孩子为空的时候加入到vector里面
+		for(i=size-1;i>=0;i--){
+			struct TreeNode* cur = (struct TreeNode*)vectorGet(vector, i);
+			int r = cur->val;
+			struct TreeNode* left = cur->left;
+			struct TreeNode* right = cur->right;
+			if(right == NULL) {
+				if(cVectorSize(cvct)) {
+					cVectorAdd(&cvct, 'l');
+					cVectorAdd(&cvct, 'l');
+					cVectorAdd(&cvct, 'u');
+					cVectorAdd(&cvct, 'n');
+					cVectorAdd(&cvct, ',');
+				}
+			}else {
+				r = right->val;
+				if(r/10){//倒序存储
+					while(r) {
+						cVectorAdd(&cvct, (char)(r - r/10*10 + 48));
+						r = r / 10;
+					}
+				}else{
+					cVectorAdd(&cvct, (char)(r+48));
+				}
+				cVectorAdd(&cvct, ',');
+			}		
+
+
+			if(left == NULL) {
+				if(cVectorSize(cvct)) {
+					cVectorAdd(&cvct, 'l');
+					cVectorAdd(&cvct, 'l');
+					cVectorAdd(&cvct, 'u');
+					cVectorAdd(&cvct, 'n');
+					cVectorAdd(&cvct, ',');
+				}
+			}else {					
+				r = left->val;
 				if(r/10){
 					while(r) {
-						cVectorAdd(&cVct, (char)(r/10+48));
-						r = r - r/10;
+						cVectorAdd(&cvct, (char)(r - r/10*10 + 48));
+						r = r / 10;
 					}
+				}else{
+					cVectorAdd(&cvct, (char)(r+48));
 				}
-				cVectorAdd(&cVct, (char)(r+48));
-				cVectorIterator(cVct);
+				cVectorAdd(&cvct, ',');
 			}
-			if(node->left != NULL && node->right != NULL) {
-				vectorAdd(&vector, node->left);
-				vectorAdd(&vector, node->right);
+			if(i == 0) {
+				r = cur->val;
+				if(r/10){
+					while(r) {
+						cVectorAdd(&cvct, (char)(r - r/10*10 + 48));
+						r = r / 10;
+					}
+				}else{
+					cVectorAdd(&cvct, (char)(r+48));
+				}
 			}
-			vectorDelete(vector, 0);
 		}
 	}
-
-	cVectorAdd(&cVct , ']');
-	cVectorAdd(&cVct , '\0');	
-	return cVct == NULL ? NULL : cVct->element;
+	CVector *result = NULL;
+	int size = cVectorSize(cvct);
+	printf("size=%d\n", size);
+	int i;
+	cVectorAdd(&result, '[');
+	for(i=size-1;i>=0;i--){
+		cVectorAdd(&result, cVectorGet(cvct, i));
+	}
+	cVectorAdd(&result, ']');
+	cVectorAdd(&result, '\0');
+	return result->element;
 }
 
 struct TreeNode* deserialize(char* data) {
@@ -126,6 +164,7 @@ int main(void){
 	}
 	
 	size = vectorSize(vector);
+	printf("size of vector is %d\n", size);
 	int j = 0;
 	i = j + 1;
 	while(i < size) {
@@ -138,6 +177,8 @@ int main(void){
 		j++;
 	}
 	struct TreeNode* root = (struct TreeNode*)vectorGet(vector, 0);
+	//tree build finished	
+
 	treeIterator(root);
 	char* c = serialize(root);
 	char* p = c;
